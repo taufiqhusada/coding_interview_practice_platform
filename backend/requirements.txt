@@ -1,0 +1,10 @@
+flask[async]
+openai==1.6.0
+flask_cors
+mongoengine
+flask_mongoengine
+python-dotenv
+Werkzeug==2.2.2
+gunicorn
+firebase_admin
+PyJWT
