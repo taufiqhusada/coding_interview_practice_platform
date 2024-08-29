@@ -58,19 +58,19 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-@socketio.on('connect')
+@socketio.on('connect', namespace='/ws')
 def handle_connect():
     sid = request.sid
     manager.connect(sid)
     print(f"Client {sid} connected")
 
-@socketio.on('disconnect')
+@socketio.on('disconnect', namespace='/ws')
 def handle_disconnect():
     sid = request.sid
     manager.disconnect(sid)
     print(f"Client {sid} disconnected")
 
-@socketio.on('message')
+@socketio.on('message', namespace='/ws')
 def handle_message(data):
     sid = request.sid
     print(f"Received text: {data}")
