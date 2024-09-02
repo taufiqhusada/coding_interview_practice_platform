@@ -5,14 +5,14 @@
       <div class="col mt-3">
         <div class="form-group">
           <select id="languageSelect" class="form-select" v-model="selectedLanguage" @change="updateLanguage">
-            <option value="javascript">JavaScript</option>
             <option value="python">Python</option>
             <option value="java">Java</option>
             <option value="cpp">C++</option>
+            <option value="javascript">JavaScript</option>
             <!-- Add more languages as needed -->
           </select>
         </div>
-        <codemirror v-model="code" placeholder="" :style="{ height: '71vh' }" :autofocus="true" :indent-with-tab="true"
+        <codemirror v-model="code" placeholder="" :style="{ height: '78vh' }" :autofocus="true" :indent-with-tab="true" style="max-width:38rem; font-size: smaller;"
           :tab-size="2" :extensions="extensions" @ready="handleReady" @change="log('change', $event)"
           @focus="log('focus', $event)" @blur="log('blur', $event)" />
       </div>
@@ -42,7 +42,7 @@ export default defineComponent({
   },
   setup() {
     const code = ref(``)
-    const selectedLanguage = ref('javascript')
+    const selectedLanguage = ref('python')
     const extensions = ref([javascript(), oneDark])
 
     // Codemirror EditorView instance ref
@@ -53,10 +53,11 @@ export default defineComponent({
     }
 
     const languages = {
-      javascript: javascript(),
+      
       python: python(),
       java: java(),
       cpp: cpp(),
+      javascript: javascript(),
     }
 
 

@@ -12,6 +12,7 @@
     align-self: center;
     font-weight: bold;
     margin-left: 15px;
+    font-size: smaller;
 }
 </style>
 
@@ -21,8 +22,8 @@
   <nav class="navbar navbar-light bg-light shadow">
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="/images/minimalist_interview_logo.png" width="40" height="40" class="d-inline-block align-top rounded-circle" alt="">
-        <b class="site-title">Interview Simulation and Reflection</b>
+        <img src="/images/minimalist_interview_logo.png" width="33" height="33" class="d-inline-block align-top rounded-circle" alt="">
+        <b class="site-title">Coding Interview Practice</b>
       </a>
     </div>
   </nav>

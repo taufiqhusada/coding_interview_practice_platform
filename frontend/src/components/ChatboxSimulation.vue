@@ -1,12 +1,22 @@
 <template>
+    <div class="problemBox mt-3">
+        <div class="contact">
+            <h6>Problem Description</h6>
+        </div>
+        <div class="problemStatement" ref="problemBox">
+            <div class="container mt-2">
+                <span v-html="problemStatement"></span>
+            </div>
+        </div>
+    </div>
     <div class="chat mt-3">
         <div class="contact">
-            <div class="name">Conversation</div>
+            <div class="name">Live Conversation</div>
         </div>
         <div id="chat-messages" class="messages" ref="messages">
             <div v-for="(message, index) in chatMessages" :key="index">
                 <div :class="message.role === 'interviewee' ? 'message interviewee' : 'message interviewer'">
-                    <div v-if="message.role === 'interviewer' && message.isTyping" class="typing">
+                    <div v-if="message.isTyping" class="typing">
                         <div class="dot dot-1"></div>
                         <div class="dot dot-2"></div>
                         <div class="dot dot-3"></div>
@@ -19,9 +29,10 @@
             </div>
         </div>
         <div class="input">
-            <button @click="sendMessage" class="btn btn-primary">Talk</button>
+            <button v-if="!isRecording" @click="startRecording" class="btn btn-primary">Start Session</button>
+            <button v-else @click="stopRecording" class="btn btn-outline-danger">Stop Session</button>
         </div>
-    
+
     </div>
 
 </template>
@@ -30,10 +41,12 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import axios from 'axios';
+import io, {Socket} from 'socket.io-client';
+import { throws } from 'assert';
 
 
 interface Metadata {
-  [key: string]: string; // Or whatever type your values are
+    [key: string]: string; // Or whatever type your values are
 }
 
 interface ChatMessage {
@@ -47,14 +60,6 @@ interface ChatMessageBackend {
     role: 'user' | 'assistant';
 }
 
-type ReferenceDocs = {
-  content: string;
-  metadata: Metadata;
-  source: string;
-  type: string;
-};
-
-
 
 export default defineComponent({
     components: {
@@ -63,76 +68,155 @@ export default defineComponent({
         return {
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
             backendURL: '/api',
-            isInterviewerTurn: true // 0 for interviewer, 1 for interviewee
+            isRecording: false, 
+            recognition: null as SpeechRecognition | null,
+            ws: null as Socket | null,
+            problemStatement: `<b>Intersection of Two Arrays</b>
+                                <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
+                                <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
+
+                                <b>Example 1:</b>
+                                <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
+
+                                <b>Example 2:</b>
+                                <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>
+                                <p>Note: [9,4] is also accepted.</p>`
         };
     },
     methods: {
-        async sendMessage() {
+        startRecording() {
+            this.isRecording = true;
 
-            if (this.isInterviewerTurn){
-                 // Simulate a bot response with typing animation
-                this.chatMessages.push({ content: '', role: 'interviewer', isTyping: true });
-            } else {
-                this.chatMessages.push({ content: '', role: 'interviewee', isTyping: true });
-            }   
-           
+            // Initialize the Socket.IO connection
+            this.ws = io('http://127.0.0.1:5000/ws');
+            // When the connection is established
+            this.ws.on('connect', () => {
+                console.log("Connected to server");
+                this.startRecognition();
+            });
 
-            this.scrollToBottom();
+            // Listen for messages from the server
+            this.ws.on('message', (data: any) => {
+                console.log(data);
+                this.processResponse(data);
+            });
 
+            // Handle connection errors
+            this.ws.on('connect_error', (error: any) => {
+                console.error('Socket.IO connection error:', error);
+            });
 
-            const requestBody = {
-                messages: this.mapChatMessagesToBackendFormat(this.chatMessages.slice(0, -1), this.isInterviewerTurn),
-            };
-
-
-            console.log(requestBody)
-
-            try {
-                // Make a POST request to your API
-                let role =  this.isInterviewerTurn ? 'interviewer' : 'interviewee'  
-                const response = await axios.post(`${this.backendURL}/agentsSimulation/getResponse/${role}`, requestBody);
-                this.chatMessages.pop();
-                if (response.status === 200) {
-                    // Update the feedback field with the response from GPT-4
-                    console.log(response.data)
-                    
-                    this.scrollToBottom();
-                    const repliedMessage = response.data.data;
-                    
-
-                    if (this.isInterviewerTurn){
-                        this.chatMessages.push({ content: repliedMessage, role: 'interviewer', isTyping: false});
-                    } else {
-                        this.chatMessages.push({ content: repliedMessage, role: 'interviewee', isTyping: false});
-                    }   
-
-                } else {
-                    // Handle API response error
-                    console.error('Failed to get chat from GPT:', response.status, response.data);
-                    this.scrollToBottom();
+            // Handle disconnection
+            this.ws.on('disconnect', () => {
+                if (this.recognition) {
+                    this.recognition.stop();
                 }
-            } catch (error) {
-                // Handle network or other errors
-                console.error('Error while chatting with GPT:', error);
+                console.log('Socket.IO disconnected.');
+            });
+        },
+
+        processResponse(res: any) {
+            this.recognition?.stop();
+
+            const ttsResponseData = res['audio_data'];
+            const gptResponseText = res['text_response'];
+
+            const audioContext = new AudioContext();
+
+            const audioData = atob(ttsResponseData);
+
+            // Convert the audio data to an ArrayBuffer
+            const audioBuffer = new ArrayBuffer(audioData.length);
+            const audioView = new Uint8Array(audioBuffer);
+            for (let i = 0; i < audioData.length; i++) {
+                audioView[i] = audioData.charCodeAt(i);
             }
 
+            const audioBlob = new Blob([audioView], { type: 'audio/mp3' });
 
-            this.isInterviewerTurn = !this.isInterviewerTurn; // change role at the end
+            // Decode the ArrayBuffer into audio data
+            audioContext.decodeAudioData(audioBuffer, (decodedBuffer) => {
+                const source = audioContext.createBufferSource();
+                source.buffer = decodedBuffer;
+                source.connect(audioContext.destination);
 
+                source.onended = () => {
+                    // Audio has ended, add your logic here
+                    this.recognition?.start();
+
+                };
+
+                this.chatMessages.pop();
+                this.chatMessages.push({ role: "interviewer", content: gptResponseText });
+                this.scrollToBottom();
+
+                source.start();
+
+            });
+        },
+
+        startRecognition() {
+            this.recognition = new webkitSpeechRecognition;
+
+            this.recognition.continuous = true;
+            this.recognition.interimResults = false;
+
+            this.recognition.onstart = () => {
+                console.log('Speech recognition is on. Speak into the microphone.');
+            };
+
+            this.recognition.onresult = (event) => {
+                let transcript = event.results[event.resultIndex][0].transcript;
+                // stop text-to-speech
+                // window.speechSynthesis.cancel();
+                if (this.ws) {
+                    this.recognition?.stop();
+                    this.chatMessages.pop();
+                    this.chatMessages.push({ role: "interviewee", content: transcript });
+                    this.scrollToBottom();
+                    this.ws.send(transcript);
+                    this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+                    this.scrollToBottom();
+                }
+            };
+
+            this.recognition.onspeechstart = (e) => {
+                this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
+                this.scrollToBottom();
+            }
+
+            this.recognition.onerror = (event) => {
+                console.log('Speech recognition error: ' + event.error);
+            };
+
+            // this.recognition.onend = () => {
+            //     if (this.recognition){
+            //         this.recognition.start();
+            //     }
+            // };
+
+            this.recognition.start();
+
+        },
+
+        stopRecording() {
+            this.recognition?.stop();
+            this.isRecording = false;
+            this.ws?.disconnect();
         },
 
         mapChatMessagesToBackendFormat(chatMessages: ChatMessage[], isInterviewerTurn: Boolean) {
             let assistant = 'interviewer'
-            if (!isInterviewerTurn){
+            if (!isInterviewerTurn) {
                 assistant = 'interviewee'
             }
 
 
             const chatMessagesWithoutTyping = chatMessages.map(({ isTyping, ...rest }) => ({
                 content: rest.content,
-                role: rest.role === assistant ?  'assistant' : 'user',
+                role: rest.role === assistant ? 'assistant' : 'user',
             }));
-            
+
             return chatMessagesWithoutTyping;
         },
 
@@ -155,7 +239,7 @@ export default defineComponent({
 <style scoped>
 .contact {
     position: relative;
-    padding-left: 2rem;
+    padding-left: 1rem;
     height: 3rem;
     display: flex;
     flex-direction: column;
@@ -167,13 +251,27 @@ export default defineComponent({
     margin-bottom: 0.125rem;
 }
 
+.problemBox {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    max-width: 100%;
+    height: 40vh;
+    z-index: 2;
+    box-sizing: border-box;
+    border-radius: 1rem;
+    background: white;
+    box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);
+}
+
 .chat {
     position: relative;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     max-width: 100%;
-    height: 75vh;
+    height: 40vh;
     z-index: 2;
     box-sizing: border-box;
     border-radius: 1rem;
@@ -184,6 +282,18 @@ export default defineComponent({
 .messages {
     /* padding: 6rem; */
     background: #F7F7F7;
+    /* You can update the background color as needed */
+    flex-shrink: 10;
+    overflow-y: auto;
+    height: 50rem;
+    box-shadow:
+        inset 0 2rem 2rem -2rem rgba(0, 0, 0, 0.05),
+        inset 0 -2rem 2rem -2rem rgba(0, 0, 0, 0.05);
+}
+
+.problemStatement {
+    /* padding: 6rem; */
+    background: white;
     /* You can update the background color as needed */
     flex-shrink: 10;
     overflow-y: auto;
@@ -431,12 +541,16 @@ input::placeholder {
 
 .message a {
     text-decoration: underline;
-    color: blue; 
+    color: blue;
 }
 
 .refresh-container {
-    display: flex; /* This turns the container into a flex container */
-    align-items: center; /* This vertically centers the children */
-    gap: 10px; /* This adds some space between the children */
+    display: flex;
+    /* This turns the container into a flex container */
+    align-items: center;
+    /* This vertically centers the children */
+    gap: 10px;
+    /* This adds some space between the children */
 }
+
 </style>

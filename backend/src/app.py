@@ -4,6 +4,7 @@ from flask_socketio import SocketIO, send, disconnect
 import openai
 import time
 import os
+import base64
 
 
 from flask import Flask, request
@@ -24,12 +25,25 @@ from config.openai_connector import init_openai_config
 load_dotenv()
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+CORS(app)
+socketio = SocketIO(app,  cors_allowed_origins="*")
 
 
 client = init_openai_config()
 
 start_time = time.time()
+
+def generate_tts(text):
+    # Send a request to the OpenAI TTS API to generate audio from text
+    tts_response = client.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input=text,
+        response_format="opus"
+    )
+
+    return tts_response.content
+
 
 def call_open_api(message):
     completion = client.chat.completions.create(
@@ -39,8 +53,8 @@ def call_open_api(message):
             {'role': 'user', 'content': message}
         ],
         temperature=0,
-        stream=True
     )
+
     return completion
 
 class ConnectionManager:
@@ -77,27 +91,14 @@ def handle_message(data):
     
     try:
         res = call_open_api(data)
-        collected_chunks = []
-        collected_messages = []
+        message = res.choices[0].message.content
+
+        audio = generate_tts(message)
+        audio_base64 = base64.b64encode(audio).decode('utf-8')
+        data = {'audio_data': audio_base64,'text_response': message}
+
+        manager.send_text(data, sid)
         
-        for chunk in res:
-            chunk_time = time.time() - start_time
-            collected_chunks.append(chunk)
-            chunk_message = chunk.choices[0].delta.content
-            collected_messages.append(chunk_message)
-            
-            if chunk_message and '.' in chunk_message:
-                message = ''.join([m for m in collected_messages if m])
-                manager.send_text(message, sid)
-                collected_messages = []
-            
-            print(f"Message received {chunk_time:.2f} seconds after request: {chunk_message}")
-
-        if collected_messages:
-            message = ''.join([m for m in collected_messages if m])
-            manager.send_text(message, sid)
-            collected_messages = []
-
     except Exception as e:
         print(f"Error: {str(e)}")
         disconnect(sid)

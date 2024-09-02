@@ -3,7 +3,7 @@
   <div class="container">
     <Simulation></Simulation>
   </div>
-  <Footer></Footer>
+  <!-- <Footer></Footer> -->
 
 </template>
 
