@@ -17,7 +17,7 @@
           @focus="log('focus', $event)" @blur="log('blur', $event)" />
       </div>
       <div class="col">
-        <ChatboxSimulation></ChatboxSimulation>
+        <ChatboxSimulation :code="code"></ChatboxSimulation>
       </div>
     </div>
   </div>

@@ -62,6 +62,12 @@ interface ChatMessageBackend {
 
 
 export default defineComponent({
+    props: {
+        code: {
+            type: String,
+            required: false
+        }
+    },
     components: {
     },
     data() {
@@ -93,6 +99,9 @@ export default defineComponent({
             this.ws.on('connect', () => {
                 console.log("Connected to server");
                 this.startRecognition();
+                this.recognition?.stop();
+                this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+                this.ws?.send({ 'is_first':true});
             });
 
             // Listen for messages from the server
@@ -116,10 +125,17 @@ export default defineComponent({
         },
 
         processResponse(res: any) {
-            this.recognition?.stop();
 
             const ttsResponseData = res['audio_data'];
             const gptResponseText = res['text_response'];
+
+            if (gptResponseText == null){
+                this.recognition?.start();
+                return
+            }
+            this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+
+            this.recognition?.stop();
 
             const audioContext = new AudioContext();
 
@@ -174,8 +190,7 @@ export default defineComponent({
                     this.chatMessages.pop();
                     this.chatMessages.push({ role: "interviewee", content: transcript });
                     this.scrollToBottom();
-                    this.ws.send(transcript);
-                    this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+                    this.ws.send({'messages':  this.chatMessages, 'code': this.code, 'is_first':false});
                     this.scrollToBottom();
                 }
             };

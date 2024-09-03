@@ -45,14 +45,137 @@ def generate_tts(text):
     return tts_response.content
 
 
-def call_open_api(message):
+def first_interaction():
+    problem = """
+    <b>Intersection of Two Arrays</b>
+        <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
+        <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>"""
+    messages=[
+            {"role": "system", 
+             "content": f"""
+                        You are a hiring manager conducting a coding interview. Your goal is to assess the candidate's problem-solving skills, coding ability, and communication. Begin by say hi and present the following coding problem:
+
+                            Problem:
+                            ```{problem}```
+    
+                        """},
+        ]
+
     completion = client.chat.completions.create(
         model='gpt-3.5-turbo',
-        messages=[
-            {"role": "system", "content": "You are a Hiring Manager that conduct a software engineering interview"},
-            {'role': 'user', 'content': message}
-        ],
-        temperature=0,
+        messages=messages,
+        temperature=0
+    )
+
+    res = completion.choices[0].message.content
+    return res
+
+def check_reply(input_data):
+    chat_messages = input_data['messages']
+    consecutive_user_messages = []
+
+    # Iterate backward through chat_messages to find the last consecutive user messages
+    for i in range(len(chat_messages) - 1, -1, -1):
+        consecutive_user_messages.append({'role': chat_messages[i]['role'] , 'content':chat_messages[i]['content']})
+
+        if chat_messages[i]['role'] != 'interviewee':
+            break  # Stop if an assistant message is encountered
+
+    # Reverse the list to maintain the original order
+    consecutive_user_messages.reverse()
+
+    prompt = f"""
+        You are an AI interviewer conducting a technical interview. After the candidate speaks or pauses, decide whether to "Reply" or "Not Reply" based on the following criteria:
+
+        Reply if:
+        - The candidate say hi
+        - The candidate asks a direct question or seeks clarification.
+        - The candidate appears stuck, confused, or has reached an incorrect conclusion.
+        - The candidate completes a segment of their thought process, and it's appropriate to provide feedback or guidance.
+        Not Reply if:
+
+        - The candidate is actively thinking aloud and logically processing their thoughts.
+        - The candidate is working through a problem or formulating a solution without needing immediate feedback.
+        - The candidate pauses briefly to think or review their approach.
+        
+        Output:
+        Based on the candidate's current message, output either "Reply" or "Not Reply".
+
+        candidate current message:
+        {consecutive_user_messages}
+        
+        """
+  
+    
+    messages=[
+        {"role": "system","content": prompt}, 
+    ]
+
+    res = client.chat.completions.create(
+        model='gpt-3.5-turbo',
+        messages=messages,
+        temperature=0
+    )
+
+    res = res.choices[0].message.content
+
+    print(messages, res)
+
+    return True if res == 'Reply' else False
+
+
+
+def call_open_api(input_data):
+    problem = """
+    `<b>Intersection of Two Arrays</b>
+        <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
+        <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
+
+        <b>Example 1:</b>
+        <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
+
+        <b>Example 2:</b>
+        <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>
+        <p>Note: [9,4] is also accepted.</p>`
+    """
+
+    code = input_data['code']
+
+    messages=[
+            {"role": "system", 
+             "content": f"""
+                        You are an experienced technical interviewer conducting a coding interview. Your goal is to assess the candidate's problem-solving skills, coding ability, and communication. The coding problem is the following:
+
+                            Problem:
+                            ```{problem}```
+
+                            The candidate will implicitly follow these four steps:
+                            1. Ask Clarifying Questions: The candidate will ask some clarifying questions to ensure they fully understand the problem.
+                            2. Propose a Solution: Have the candidate outline their proposed solution, including the logic, data structures, and algorithms they plan to use.
+                            3. Code the Solution: As they code, the candidate will explain their thought process, detailing how their code addresses the problem step by step.
+                            4. Dry Run the Code: After coding, ask the candidate to simulate the execution of their code with a test case, explaining how each part of the code functions and what the expected output will be.
+
+                            Throughout the interview:
+                            - Prompt the candidate to think aloud and explain their reasoning at each step.
+                            - Ask follow-up questions to gauge their understanding and depth of knowledge.
+                            - If the candidate struggles, offer hints or guidance after they’ve made a reasonable attempt.
+                            - Observe the correctness, efficiency, and clarity of their code and communication.
+                            
+                            At any point, you can refer to the candidate’s current code:
+
+                            Candidate's Current Code:
+                            ```{code}```
+                        """},
+        ]
+
+    chat_messages = [{'content': item['content'], "role": 'user' if item['role'] == 'interviewee' else 'assistant'} for item in input_data['messages']]
+
+    messages += chat_messages
+
+    print(messages)
+    completion = client.chat.completions.create(
+        model='gpt-3.5-turbo',
+        messages=messages
     )
 
     return completion
@@ -90,15 +213,29 @@ def handle_message(data):
     print(f"Received text: {data}")
     
     try:
-        res = call_open_api(data)
-        message = res.choices[0].message.content
+        if data['is_first'] == True:
+            message = first_interaction()
+            audio = generate_tts(message)
+            audio_base64 = base64.b64encode(audio).decode('utf-8')
+            data = {'audio_data': audio_base64,'text_response': message}
 
-        audio = generate_tts(message)
-        audio_base64 = base64.b64encode(audio).decode('utf-8')
-        data = {'audio_data': audio_base64,'text_response': message}
+            manager.send_text(data, sid)
 
-        manager.send_text(data, sid)
-        
+        elif check_reply(data):
+
+            res = call_open_api(data)
+            message = res.choices[0].message.content
+
+            audio = generate_tts(message)
+            audio_base64 = base64.b64encode(audio).decode('utf-8')
+            data = {'audio_data': audio_base64,'text_response': message}
+
+            manager.send_text(data, sid)
+        else:
+            data = {'audio_data': None,'text_response': None}
+            manager.send_text(data, sid)
+
+
     except Exception as e:
         print(f"Error: {str(e)}")
         disconnect(sid)
