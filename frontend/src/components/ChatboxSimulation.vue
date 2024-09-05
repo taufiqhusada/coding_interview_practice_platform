@@ -28,9 +28,20 @@
                 </div>
             </div>
         </div>
-        <div class="input">
-            <button v-if="!isRecording" @click="startRecording" class="btn btn-primary">Start Session</button>
-            <button v-else @click="stopRecording" class="btn btn-outline-danger">Stop Session</button>
+        <div class="d-flex flex-row m-2">
+            <div class="form-group" style="width: 100%;">
+                <select id="languageSelect" class="form-select" v-model="selectedLanguage" @change="updateLanguage">
+                    <option value="active">Active</option>
+                    <option value="passive">Passive</option>
+                    <option value="random">Random</option>
+                    <!-- Add more languages as needed -->
+                </select>
+            </div>
+            <div class="input" style="width: 200px;">
+                <button v-if="!isRecording" @click="startRecording" class="btn btn-primary" style="width: 200px;">Start Session</button>
+                <button v-else @click="stopRecording" class="btn btn-outline-danger" style="width: 200px;">Pause Session</button>
+            </div>
+            
         </div>
 
     </div>
@@ -41,7 +52,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import axios from 'axios';
-import io, {Socket} from 'socket.io-client';
+import io, { Socket } from 'socket.io-client';
 import { throws } from 'assert';
 
 
@@ -74,7 +85,7 @@ export default defineComponent({
         return {
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
             backendURL: '/api',
-            isRecording: false, 
+            isRecording: false,
             recognition: null as SpeechRecognition | null,
             ws: null as Socket | null,
             problemStatement: `<b>Intersection of Two Arrays</b>
@@ -101,7 +112,7 @@ export default defineComponent({
                 this.startRecognition();
                 this.recognition?.stop();
                 this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
-                this.ws?.send({ 'is_first':true});
+                this.ws?.send({ 'is_first': true });
             });
 
             // Listen for messages from the server
@@ -129,7 +140,7 @@ export default defineComponent({
             const ttsResponseData = res['audio_data'];
             const gptResponseText = res['text_response'];
 
-            if (gptResponseText == null){
+            if (gptResponseText == null) {
                 this.recognition?.start();
                 return
             }
@@ -190,7 +201,7 @@ export default defineComponent({
                     this.chatMessages.pop();
                     this.chatMessages.push({ role: "interviewee", content: transcript });
                     this.scrollToBottom();
-                    this.ws.send({'messages':  this.chatMessages, 'code': this.code, 'is_first':false});
+                    this.ws.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
                     this.scrollToBottom();
                 }
             };
