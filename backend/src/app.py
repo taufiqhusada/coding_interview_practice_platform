@@ -12,6 +12,7 @@ from flask_cors import CORS
 import os
 
 from routes.AgentsSimulation import agentsSimulationBP
+from routes.GenerateSimulation import generateSimulationBP
 from database.db import initialize_db
 from dotenv import load_dotenv
 
@@ -246,6 +247,7 @@ def hello_world():
     return  "hello world"
 
 app.register_blueprint(agentsSimulationBP)
+app.register_blueprint(generateSimulationBP)
 
 
 if __name__ == "__main__":
