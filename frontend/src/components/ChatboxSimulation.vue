@@ -97,7 +97,9 @@ export default defineComponent({
 
                                 <b>Example 2:</b>
                                 <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>
-                                <p>Note: [9,4] is also accepted.</p>`
+                                <p>Note: [9,4] is also accepted.</p>`,
+            recognitionTimeout: undefined as  ReturnType<typeof setTimeout> | undefined,
+            isSendingMessage: false,
         };
     },
     methods: {
@@ -109,6 +111,7 @@ export default defineComponent({
             // When the connection is established
             this.ws.on('connect', () => {
                 console.log("Connected to server");
+                this.isSendingMessage = true;
                 this.startRecognition();
                 this.recognition?.stop();
                 this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
@@ -140,12 +143,6 @@ export default defineComponent({
             const ttsResponseData = res['audio_data'];
             const gptResponseText = res['text_response'];
 
-            if (gptResponseText == null) {
-                this.recognition?.start();
-                return
-            }
-            this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
-
             this.recognition?.stop();
 
             const audioContext = new AudioContext();
@@ -168,6 +165,7 @@ export default defineComponent({
                 source.connect(audioContext.destination);
 
                 source.onended = () => {
+                    this.isSendingMessage = false;
                     // Audio has ended, add your logic here
                     this.recognition?.start();
 
@@ -194,19 +192,31 @@ export default defineComponent({
 
             this.recognition.onresult = (event) => {
                 let transcript = event.results[event.resultIndex][0].transcript;
-                // stop text-to-speech
-                // window.speechSynthesis.cancel();
-                if (this.ws) {
-                    this.recognition?.stop();
-                    this.chatMessages.pop();
-                    this.chatMessages.push({ role: "interviewee", content: transcript });
-                    this.scrollToBottom();
-                    this.ws.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
-                    this.scrollToBottom();
-                }
+                
+                this.chatMessages.pop();
+                this.chatMessages.push({ role: "interviewee", content: transcript });
+                this.scrollToBottom();
+                this.recognition?.stop(); // it will call start after the callback
+                // this.recognition?.start();
+
+                this.recognitionTimeout = setTimeout(() => {
+                    if (this.ws) {
+                        this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+
+                        this.isSendingMessage = true;
+                        console.log("enter function timeout")
+                        this.recognition?.stop();
+                        this.ws.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
+                        this.scrollToBottom();
+                    }
+                }, 2000); 
+
+                
             };
 
             this.recognition.onspeechstart = (e) => {
+                console.log("restarted")
+                clearTimeout(this.recognitionTimeout); 
                 this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
                 this.scrollToBottom();
             }
@@ -215,11 +225,11 @@ export default defineComponent({
                 console.log('Speech recognition error: ' + event.error);
             };
 
-            // this.recognition.onend = () => {
-            //     if (this.recognition){
-            //         this.recognition.start();
-            //     }
-            // };
+            this.recognition.onend = () => {
+                if (this.recognition && !this.isSendingMessage){
+                    this.recognition.start();
+                }
+            };
 
             this.recognition.start();
 
