@@ -30,7 +30,7 @@
         </div>
         <div class="d-flex flex-row m-2">
             <div class="form-group" style="width: 100%;">
-                <select id="languageSelect" class="form-select" v-model="selectedLanguage" @change="updateLanguage">
+                <select id="languageSelect" class="form-select">
                     <option value="active">Active</option>
                     <option value="passive">Passive</option>
                     <option value="random">Random</option>
@@ -38,10 +38,12 @@
                 </select>
             </div>
             <div class="input" style="width: 200px;">
-                <button v-if="!isRecording" @click="startRecording" class="btn btn-primary" style="width: 200px;">Start Session</button>
-                <button v-else @click="stopRecording" class="btn btn-outline-danger" style="width: 200px;">Pause Session</button>
+                <button v-if="!isRecording" @click="startRecording" class="btn btn-primary" style="width: 200px;">Start
+                    Session</button>
+                <button v-else @click="stopRecording" class="btn btn-outline-danger" style="width: 200px;">Stop
+                    Session</button>
             </div>
-            
+
         </div>
 
     </div>
@@ -98,7 +100,7 @@ export default defineComponent({
                                 <b>Example 2:</b>
                                 <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>
                                 <p>Note: [9,4] is also accepted.</p>`,
-            recognitionTimeout: undefined as  ReturnType<typeof setTimeout> | undefined,
+            silenceTimer: undefined as ReturnType<typeof setTimeout> | undefined,
             isSendingMessage: false,
         };
     },
@@ -143,7 +145,7 @@ export default defineComponent({
             const ttsResponseData = res['audio_data'];
             const gptResponseText = res['text_response'];
 
-            this.recognition?.stop();
+            this.recognition?.stop(); // I don't know if this is necessary
 
             const audioContext = new AudioContext();
 
@@ -181,61 +183,77 @@ export default defineComponent({
         },
 
         startRecognition() {
-            this.recognition = new webkitSpeechRecognition;
-
+            this.recognition = new webkitSpeechRecognition();
             this.recognition.continuous = true;
-            this.recognition.interimResults = false;
+            this.recognition.interimResults = true;
+
+            let currentTranscript = '';
 
             this.recognition.onstart = () => {
                 console.log('Speech recognition is on. Speak into the microphone.');
             };
 
             this.recognition.onresult = (event) => {
-                let transcript = event.results[event.resultIndex][0].transcript;
-                
-                this.chatMessages.pop();
-                this.chatMessages.push({ role: "interviewee", content: transcript });
-                this.scrollToBottom();
-                this.recognition?.stop(); // it will call start after the callback
-                // this.recognition?.start();
+                // Clear any existing silence timer
+                if (this.silenceTimer) {
+                    clearTimeout(this.silenceTimer);
+                }
 
-                this.recognitionTimeout = setTimeout(() => {
-                    if (this.ws) {
-                        this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        currentTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
 
+                // Set a new silence timer
+                this.silenceTimer = setTimeout(() => {
+                    if (this.ws && currentTranscript.trim() !== '') {
                         this.isSendingMessage = true;
-                        console.log("enter function timeout")
                         this.recognition?.stop();
+
+                        // Add or update the user's message
+                        if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
+                            this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: currentTranscript + interimTranscript };
+                        } else {
+                            this.chatMessages.push({ role: "interviewee", content: currentTranscript + interimTranscript });
+                        }
+                        this.scrollToBottom();
+                        
+                        this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+                        
+                        console.log("Silence detected, sending message");
                         this.ws.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
                         this.scrollToBottom();
+                        currentTranscript = '';
                     }
-                }, 2000); 
-
-                
+                }, 2000);
             };
-
-            this.recognition.onspeechstart = (e) => {
-                console.log("restarted")
-                clearTimeout(this.recognitionTimeout); 
-                this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
-                this.scrollToBottom();
-            }
 
             this.recognition.onerror = (event) => {
                 console.log('Speech recognition error: ' + event.error);
             };
 
+            this.recognition.onspeechstart = (e) => {
+                console.log("restarted")
+                clearTimeout(this.silenceTimer); 
+                this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
+                this.scrollToBottom();
+            }
+
             this.recognition.onend = () => {
-                if (this.recognition && !this.isSendingMessage){
-                    this.recognition.start();
+                if (!this.isSendingMessage) {
+                    this.recognition?.start();
                 }
             };
 
             this.recognition.start();
-
         },
 
         stopRecording() {
+            this.isSendingMessage = true; // just to set the flag
             this.recognition?.stop();
             this.isRecording = false;
             this.ws?.disconnect();
@@ -588,5 +606,4 @@ input::placeholder {
     gap: 10px;
     /* This adds some space between the children */
 }
-
 </style>
