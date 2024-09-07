@@ -211,16 +211,16 @@ export default defineComponent({
                 // Set a new silence timer
                 this.silenceTimer = setTimeout(() => {
                     if (this.ws && currentTranscript.trim() !== '') {
-                        this.isSendingMessage = true;
-                        this.recognition?.stop();
-
                         // Add or update the user's message
                         if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
                             this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: currentTranscript + interimTranscript };
                         } else {
-                            this.chatMessages.push({ role: "interviewee", content: currentTranscript + interimTranscript });
+                            return
                         }
                         this.scrollToBottom();
+
+                        this.isSendingMessage = true;
+                        this.recognition?.stop();
                         
                         this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
                         
@@ -243,11 +243,11 @@ export default defineComponent({
                 this.scrollToBottom();
             }
 
-            this.recognition.onend = () => {
-                if (!this.isSendingMessage) {
-                    this.recognition?.start();
-                }
-            };
+            // this.recognition.onend = () => {
+            //     if (!this.isSendingMessage) {
+            //         this.recognition?.start();
+            //     }
+            // };
 
             this.recognition.start();
         },
