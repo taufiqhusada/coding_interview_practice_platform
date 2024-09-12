@@ -13,6 +13,8 @@ import os
 
 from routes.AgentsSimulation import agentsSimulationBP
 from routes.GenerateSimulation import generateSimulationBP
+from routes.GetFeedback import getFeedbackBP
+
 from database.db import initialize_db
 from dotenv import load_dotenv
 
@@ -246,6 +248,7 @@ def hello_world():
 
 app.register_blueprint(agentsSimulationBP)
 app.register_blueprint(generateSimulationBP)
+app.register_blueprint(getFeedbackBP)
 
 
 if __name__ == "__main__":
