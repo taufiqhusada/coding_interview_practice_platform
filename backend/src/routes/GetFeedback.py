@@ -29,23 +29,26 @@ def save_transcript(transcript):
     return session_id
 
 
-@getFeedback.route('/getFeedback/general', methods=['POST'])
+@getFeedbackBP.route('/getFeedback/general', methods=['POST'])
 def get_general_feedback():
     data = request.json
     transcript = data['transcript']
-    
+    print(transcript)
+
     session_id = save_transcript(transcript)
 
     openai = init_openai_config()
 
     prompt = f"""
         "I have a transcript of a coding interview where the interviewee is required to think aloud while solving a problem. Based on the transcript provided below, please give detailed feedback on the interviewee's performance, focusing on the following four aspects. Format the response in JSON with this structure:
-            {
+            {{
             "clarification": "Feedback on how the interviewee asked clarifying questions.",
             "ideation": "Feedback on how the interviewee proposed ideas and solutions.",
             "communication_during_coding": "Feedback on how the interviewee communicated while coding.",
             "dry_run": "Feedback on how the interviewee explained their code using provided examples or test cases."
-            }
+            }}
+
+            make sure you assess it objectively.
 
             Here are the specific phases to assess:
 
@@ -57,7 +60,9 @@ def get_general_feedback():
 
             4. Dry run: Analyze how the interviewee walked through their code with provided examples or test cases. Did they clearly explain the flow of the code, identify potential issues, and consider additional edge cases?
 
-            Transcript:  {transcript}
+            If the interviewee do not do the phases above then say it that they do not do it.
+
+            Transcript:  {str(transcript)}
 
         """
 
@@ -65,6 +70,7 @@ def get_general_feedback():
         "role": "system",
         "content": prompt
         }]
+    print(messages)
 
     gpt_response = openai.chat.completions.create(
         model=os.getenv('OPENAI_GPT_MODEL'),

@@ -252,11 +252,38 @@ export default defineComponent({
             this.recognition.start();
         },
 
-        stopRecording() {
+        async stopRecording() {
             this.isSendingMessage = true; // just to set the flag
             this.recognition?.stop();
             this.isRecording = false;
             this.ws?.disconnect();
+
+            // save 
+            try {
+                // Make a POST request to your API
+                const requestBody = {
+                    transcript: this.chatMessages,
+                };
+                const response = await axios.post(`${this.backendURL}/getFeedback/general`, requestBody);
+                if (response.status === 200) {
+                    // Update the feedback field with the response from GPT-4
+                    console.log(response.data)
+                    
+                    const sessionId = response.data["session_id"];
+                    const feedback = response.data["feedback"]
+                    
+                    console.log(sessionId)
+                    console.log(feedback)
+
+                } else {
+                    // Handle API response error
+                    console.error('Failed to save and get feedback', response.status, response.data);
+                    this.scrollToBottom();
+                }
+            } catch (error) {
+                // Handle network or other errors
+                console.error('Error while saving and get feedback', error);
+            }
         },
 
         mapChatMessagesToBackendFormat(chatMessages: ChatMessage[], isInterviewerTurn: Boolean) {
