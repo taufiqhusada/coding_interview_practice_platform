@@ -9,7 +9,7 @@ import datetime
 
 getFeedbackBP = Blueprint('getFeedback', __name__)
 
-def save_transcript(transcript):
+def save_transcript_and_feedback(transcript, feedback):
     # Generate a random sessionID using uuid
     session_id = str(uuid.uuid4())  
     # Capture the current datetime
@@ -19,7 +19,8 @@ def save_transcript(transcript):
     data = {
         'sessionID': session_id,
         'datetime': current_datetime,
-        'transcript': transcript
+        'transcript': transcript,
+        'feedback': feedback,
     }
     
     # Create an InterviewTranscript object and save it
@@ -35,7 +36,6 @@ def get_general_feedback():
     transcript = data['transcript']
     print(transcript)
 
-    session_id = save_transcript(transcript)
 
     openai = init_openai_config()
 
@@ -76,9 +76,36 @@ def get_general_feedback():
         model=os.getenv('OPENAI_GPT_MODEL'),
         messages=messages,
         temperature=0,
+        response_format={ "type": "json_object" }
     )
 
     feedback = gpt_response.choices[0].message.content
 
+    session_id = save_transcript_and_feedback(transcript, feedback)
+
+    print(feedback)
+
     res = {'feedback': feedback, 'session_id': session_id}
     return res
+
+
+
+@getFeedbackBP.route('/retrieveFeedback/general', methods=['POST'])
+def retrieve_general_feedback():
+    try:
+        data = request.json
+        sessionID = data['sessionID']
+        # Query the InterviewTranscript object based on sessionID
+        interview = InterviewTranscript.objects.get(sessionID=sessionID)
+        
+        # Return the transcript and feedback
+        return {
+            'sessionID': interview.sessionID,
+            'datetime': interview.datetime,
+            'transcript': interview.transcript,
+            'feedback': interview.feedback,
+        }
+    except InterviewTranscript.DoesNotExist:
+        # Handle case where no transcript is found for the given sessionID
+        return {'error': 'No transcript found for the given sessionID'}
+

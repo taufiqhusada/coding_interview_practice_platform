@@ -56,6 +56,8 @@ import { defineComponent, ref } from 'vue';
 import axios from 'axios';
 import io, { Socket } from 'socket.io-client';
 import { throws } from 'assert';
+import Cookies from 'js-cookie';
+import router from '@/router';
 
 
 interface Metadata {
@@ -274,6 +276,9 @@ export default defineComponent({
                     
                     console.log(sessionId)
                     console.log(feedback)
+
+                    Cookies.set('sessionID', sessionId,  { expires: 120 / (24 * 60) });
+                    router.push('/feedback');
 
                 } else {
                     // Handle API response error

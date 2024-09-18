@@ -1,5 +1,5 @@
 <template>
-  <Header></Header>
+  <Header :currentPage="'simulation'"></Header>
   <div class="container">
     <Simulation></Simulation>
   </div>

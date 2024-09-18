@@ -1,6 +1,6 @@
 
 <template>
-  <Header></Header>
+  <Header :currentPage="'example'"></Header>
   <div class="container">
     <Example></Example>
   </div>
