@@ -77,12 +77,12 @@ def generate_simulation():
     response = response.choices[0].message.content
     return response
 
-def generate_tts(text):
+def generate_tts(text, role):
     openai = init_openai_config()
     # Send a request to the OpenAI TTS API to generate audio from text
     tts_response = openai.audio.speech.create(
         model="tts-1",
-        voice="alloy",
+        voice="alloy" if role == "interviewer" else "nova",
         input=text,
         response_format="opus"
     )
@@ -92,7 +92,7 @@ def generate_tts(text):
 
 def generate_tts_from_generated_simulation(data):
     for item in data:
-        audio = generate_tts(item['content'])
+        audio = generate_tts(item['content'], item['role'])
         audio_base64 = base64.b64encode(audio).decode('utf-8')
         item['audio_base64'] = audio_base64
 
