@@ -67,6 +67,7 @@ interface ChatMessage {
     role: 'interviewee' | 'interviewer';
     explanation: string;
     code: string;
+    audio_base64: string;
 }
 
 interface ChatMessageBackend {
@@ -138,15 +139,12 @@ const getNextInteraction = async () => {
             role: nextMessage.role,
             explanation: nextMessage.explanation,
             code: nextMessage.code,
+            audio_base64: "",
         });
 
         scrollToBottom();
 
-
-        // If there is code, simulate typing it
-        if (nextMessage.code !== "") {
-            await typeCode(nextMessage.code); 
-        }
+        processAudio(nextMessage);
         currentIdxChat.value++;
     }
 };
@@ -186,6 +184,47 @@ const scrollToBottom = () => {
         });
     }
 };
+
+const processAudio =  async (res: any) => {
+    // If there is code, simulate typing it
+    let typeCodePromise = null
+    if (res.code !== "") {
+        typeCodePromise = typeCode(res.code); 
+    }
+
+    const ttsResponseData = res['audio_base64'];
+
+    const audioContext = new AudioContext();
+
+    const audioData = atob(ttsResponseData);
+
+    // Convert the audio data to an ArrayBuffer
+    const audioBuffer = new ArrayBuffer(audioData.length);
+    const audioView = new Uint8Array(audioBuffer);
+    for (let i = 0; i < audioData.length; i++) {
+        audioView[i] = audioData.charCodeAt(i);
+    }
+
+    const audioBlob = new Blob([audioView], { type: 'audio/mp3' });
+
+    // Decode the ArrayBuffer into audio data
+    audioContext.decodeAudioData(audioBuffer, (decodedBuffer) => {
+        const source = audioContext.createBufferSource();
+        source.buffer = decodedBuffer;
+        source.connect(audioContext.destination);
+
+        source.onended =  async () => {
+            // Audio has ended, add your logic here
+            await typeCodePromise;
+            getNextInteraction();
+
+        };
+
+        source.start();
+
+    });
+}
+
 </script>
 
 

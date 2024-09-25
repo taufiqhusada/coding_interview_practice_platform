@@ -4,13 +4,15 @@ from util.response import  convert_to_json_resp
 from config.openai_connector import init_openai_config
 import os
 import json
+import base64
 
 generateSimulationBP = Blueprint('generateSimulationBP', __name__)
 
 @generateSimulationBP.route('/generateSimulation', methods=['POST'])
 def generate_static_simulation():
-    with open('routes/static/example_3.json', 'r') as file:
+    with open('routes/static/example_3_with_audio.json', 'r') as file:
         data = json.load(file)
+        # data = generate_tts_from_generated_simulation(data)
     return data
 
 # TODO: use this
@@ -74,3 +76,29 @@ def generate_simulation():
 
     response = response.choices[0].message.content
     return response
+
+def generate_tts(text):
+    openai = init_openai_config()
+    # Send a request to the OpenAI TTS API to generate audio from text
+    tts_response = openai.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input=text,
+        response_format="opus"
+    )
+
+    return tts_response.content
+
+
+def generate_tts_from_generated_simulation(data):
+    for item in data:
+        audio = generate_tts(item['content'])
+        audio_base64 = base64.b64encode(audio).decode('utf-8')
+        item['audio_base64'] = audio_base64
+
+        print(item['content'], audio_base64)
+       
+    return data
+
+ 
+
