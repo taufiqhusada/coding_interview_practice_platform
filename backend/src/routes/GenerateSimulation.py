@@ -9,7 +9,7 @@ generateSimulationBP = Blueprint('generateSimulationBP', __name__)
 
 @generateSimulationBP.route('/generateSimulation', methods=['POST'])
 def generate_static_simulation():
-    with open('routes/static/example_1.json', 'r') as file:
+    with open('routes/static/example_3.json', 'r') as file:
         data = json.load(file)
     return data
 
@@ -20,10 +20,11 @@ def generate_simulation():
 
     prompt = f"""
                 Simulate a realistic coding interview between an interviewer and an interviewee focused on solving the given Problem. 
-                The simulation should include explanations of best practices based on the example provided. 
+                The simulation should include explanations of best practices based on the example provided. When you write the code put it on "lines of code" and write and explain it step by step.
+                Do not use built-in library if possible
 
                 Format your answer into a json format:
-                [{{"role(interviewer/ interviewee)": "", "content": "", "explanation (when the role is interviewee, explain the importance or rationale of answering in a such way)": ""}}, ...]]
+                [{{"role(interviewer/ interviewee)": "", "content": "", "code (containing STEP BY STEP CODE that the interviewee write while think aloud)": "","explanation (when the role is interviewee, explain the importance or rationale of answering in a such way)": ""}}, ...]]
 
                 The interviewer should ask probing questions to understand the interviewee's thought process, while the interviewee should clearly explain their approach, consider edge cases, and write code to solve the problem.
 

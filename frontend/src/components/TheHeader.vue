@@ -16,9 +16,9 @@
         <a class="nav-link" :class="{ 'current-link': currentPage === 'example' }" href="/example">
           3. Example
         </a>
-        <a class="nav-link" :class="{ 'current-link': currentPage === 'comparison' }" href="/comparison">
+        <!-- <a class="nav-link" :class="{ 'current-link': currentPage === 'comparison' }" href="/comparison">
           4. Comparison
-        </a>
+        </a> -->
       </div>
     </div>
   </nav>
