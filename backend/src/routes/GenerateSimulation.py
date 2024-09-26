@@ -10,7 +10,7 @@ generateSimulationBP = Blueprint('generateSimulationBP', __name__)
 
 @generateSimulationBP.route('/generateSimulation', methods=['POST'])
 def generate_static_simulation():
-    with open('routes/static/example_3_with_audio.json', 'r') as file:
+    with open('routes/static/example_4_with_audio.json', 'r') as file:
         data = json.load(file)
         # data = generate_tts_from_generated_simulation(data)
     return data
