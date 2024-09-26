@@ -10,23 +10,34 @@
         </div>
     </div>
 
-    <!-- <button class="btn btn-primary mt-3" @click="toggleTranscript">
-        {{ isTranscriptVisible ? 'Hide Transcript' : 'Show Transcript' }}
-    </button> -->
+   <div class="d-flex align-items-center mt-3">
+        <button v-if="!isRecording" @click="startRecording" class="btn btn-primary" style="margin-right: 20px; width: 150px; white-space: nowrap;">
+            Start Session
+        </button>
+        <button v-else @click="stopRecording" class="btn btn-outline-danger" style="margin-right: 20px; width: 150px; white-space: nowrap;">
+            Stop Session
+        </button>
 
-    <button v-if="!isRecording" @click="startRecording" class="btn btn-primary mt-3">
-        Start Session
-    </button>
-    <button v-else @click="stopRecording" class="btn btn-outline-danger mt-3">
-        Stop Session
-    </button>
+        <button v-if="isRecording" @click="toggleTranscript" class="btn btn-outline-primary" style="margin-right: 20px; width: 150px; white-space: nowrap;">
+            {{ isTranscriptVisible ? 'Hide Transcript' : 'Show Transcript' }}
+        </button>
 
-    <button @click="getResponseFromGPT" class="btn btn-outline-primary mt-3" style="margin-left: 20px;">
-        Get Response
-    </button>
+        <button v-if="isRecording" @click="getResponseFromGPT" class="btn btn-outline-primary" style="margin-right: 20px; width: 150px; white-space: nowrap;">
+            Get Response
+        </button>
+
+        <div class="form-group mb-0" style="width: 120%;"> <!-- Increased width -->
+            <select id="interactionMode" class="form-select" style="padding-right: 2%; padding-left: 2%;" v-model="selectedInteractionMode" @change="changeInteractionMode">
+                <option value="manualReply">Manual Reply</option>
+                <option value="autoReplay">Auto Reply</option>
+            </select>
+        </div>
+    </div>
 
 
-    <div v-if="isTranscriptVisible" class="chat mt-3">
+
+
+    <div v-if="isTranscriptVisible && isRecording" class="chat mt-3">
         <div class="contact">
             <div class="name">Live Transcript</div>
         </div>
@@ -49,13 +60,13 @@
 
         <!-- Other existing content (e.g., recording button) -->
         <div class="d-flex flex-row m-2">
-            <div class="form-group" style="width: 100%;">
+            <!-- <div class="form-group" style="width: 100%;">
                 <select id="languageSelect" class="form-select">
                     <option value="active">Active</option>
                     <option value="passive">Passive</option>
                     <option value="random">Random</option>
                 </select>
-            </div>
+            </div> -->
             <div class="input" style="width: 200px;">
 
             </div>
@@ -119,6 +130,7 @@ export default defineComponent({
             isSendingMessage: false,
             isTranscriptVisible: true,
             isManualModeReply: true,
+            selectedInteractionMode: "manualReply"
         };
     },
 
@@ -129,7 +141,7 @@ export default defineComponent({
         // Define the keydown handler
         handleKeydown(event: KeyboardEvent) {
             // Check if Ctrl+Space (Windows/Linux) or Cmd+Space (Mac) is pressed
-            if ((event.ctrlKey || event.metaKey) && event.code === 'KeyM') {
+            if (this.isManualModeReply && (event.ctrlKey || event.metaKey) && event.code === 'KeyM') {
                 console.log("button pressed")
                 event.preventDefault(); // Prevent the default browser behavior
                 this.getResponseFromGPT(); // Call the method
@@ -369,7 +381,14 @@ export default defineComponent({
             this.scrollToBottom();
         },
 
-        
+        changeInteractionMode(){
+            if (this.selectedInteractionMode == "manualReply"){
+                this.isManualModeReply = true;
+            } else {
+                this.isManualModeReply = false;
+            }
+            console.log(this.isManualModeReply)
+        }
     },
 
     mounted() {
