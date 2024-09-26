@@ -10,29 +10,38 @@
         </div>
     </div>
 
-   <div class="d-flex align-items-center mt-3">
-        <button v-if="!isRecording" @click="startRecording" class="btn btn-primary" style="margin-right: 20px; width: 150px; white-space: nowrap;">
+    <div class="d-flex align-items-center mt-3">
+        <button v-if="!isRecording" @click="startRecording" class="btn btn-primary"
+            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
             Start Session
         </button>
-        <button v-else @click="stopRecording" class="btn btn-outline-danger" style="margin-right: 20px; width: 150px; white-space: nowrap;">
+        <button v-else @click="stopRecording" class="btn btn-outline-danger"
+            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
             Stop Session
         </button>
 
-        <button v-if="isRecording" @click="toggleTranscript" class="btn btn-outline-primary" style="margin-right: 20px; width: 150px; white-space: nowrap;">
+        <button v-if="isRecording" @click="toggleTranscript" class="btn btn-outline-primary"
+            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
             {{ isTranscriptVisible ? 'Hide Transcript' : 'Show Transcript' }}
         </button>
 
-        <button v-if="isRecording" @click="getResponseFromGPT" class="btn btn-outline-primary" style="margin-right: 20px; width: 150px; white-space: nowrap;">
+        <button v-if="isRecording && !isSendingMessage" @click="getResponseFromGPT" class="btn btn-outline-primary"
+            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
             Get Response
         </button>
 
-        <div class="form-group mb-0" style="width: 120%;"> <!-- Increased width -->
-            <select id="interactionMode" class="form-select" style="padding-right: 2%; padding-left: 2%;" v-model="selectedInteractionMode" @change="changeInteractionMode">
+        <div v-if="isSendingMessage">
+            <loaderSimple style="margin-left: 20px; margin-right: 40px"></loaderSimple>
+        </div>
+
+        <div class="form-group mb-0" style="flex-grow: 1;"> <!-- Use flex-grow for better responsiveness -->
+            <select id="interactionMode" class="form-select" style="padding: 0.375rem 0.75rem; min-width: 150px;">
                 <option value="manualReply">Manual Reply</option>
                 <option value="autoReplay">Auto Reply</option>
             </select>
         </div>
     </div>
+
 
 
 
@@ -82,6 +91,8 @@ import io, { Socket } from 'socket.io-client';
 import { throws } from 'assert';
 import Cookies from 'js-cookie';
 import router from '@/router';
+import loaderSimple from './misc/loader_simple.vue';
+
 
 
 interface Metadata {
@@ -108,6 +119,7 @@ export default defineComponent({
         }
     },
     components: {
+        loaderSimple,
     },
     data() {
         return {
@@ -381,8 +393,8 @@ export default defineComponent({
             this.scrollToBottom();
         },
 
-        changeInteractionMode(){
-            if (this.selectedInteractionMode == "manualReply"){
+        changeInteractionMode() {
+            if (this.selectedInteractionMode == "manualReply") {
                 this.isManualModeReply = true;
             } else {
                 this.isManualModeReply = false;
