@@ -7,8 +7,19 @@
                 </div>
                 <div id="chat-messages" class="messages" ref="messages">
                     <div v-for="(message, index) in currChatMessages" :key="index">
-                        <div :class="message.role === 'interviewee' ? 'message interviewee' : 'message interviewer'"
-                            :data-text="message.explanation" class="tooltip-box">
+                        <div :class="[
+                                'message',
+                                message.role === 'interviewee' ? 'interviewee' : 'interviewer',
+                                message.explanation !== '' ? 'tooltip-top' : ''
+                            ]"
+                            v-if="message.explanation !== ''"
+                            :data-tooltip="message.explanation"
+                        >
+                            <span>{{ message.content }}</span>
+                        </div>
+                        <!-- If no explanation, render without tooltip -->
+                        <div :class="['message', message.role === 'interviewee' ? 'interviewee' : 'interviewer']" 
+                            v-else>
                             <span>{{ message.content }}</span>
                         </div>
                     </div>
@@ -33,7 +44,8 @@
             </div>
             <div class="mt-3">
                 <Codemirror placeholder="" :style="{ height: '35vh' }" :autofocus="true" :indent-with-tab="true"
-                    style="max-width:40rem; font-size: smaller;" :value="code" :tab-size="2" :extensions="extensions"  v-model="code"/>
+                    style="max-width:40rem; font-size: smaller;" :value="code" :tab-size="2" :extensions="extensions"
+                    v-model="code" />
             </div>
 
 
@@ -92,7 +104,7 @@ const currentIdxChat = ref(0)
 const allChatMessages = ref<ChatMessage[]>([]);  // Using ref for reactivity
 const currChatMessages = ref<ChatMessage[]>([]);  // Using ref for reactivity
 
-const messages =  ref<HTMLDivElement | null>(null);// Create a ref for the chat-messages div
+const messages = ref<HTMLDivElement | null>(null);// Create a ref for the chat-messages div
 
 
 
@@ -180,16 +192,16 @@ const scrollToBottom = () => {
     if (messages.value) {
         nextTick(() => {
             if (messages.value)
-            messages.value.scrollTop = messages.value.scrollHeight;
+                messages.value.scrollTop = messages.value.scrollHeight;
         });
     }
 };
 
-const processAudio =  async (res: any) => {
+const processAudio = async (res: any) => {
     // If there is code, simulate typing it
     let typeCodePromise = null
     if (res.code !== "") {
-        typeCodePromise = typeCode(res.code); 
+        typeCodePromise = typeCode(res.code);
     }
 
     const ttsResponseData = res['audio_base64'];
@@ -213,7 +225,7 @@ const processAudio =  async (res: any) => {
         source.buffer = decodedBuffer;
         source.connect(audioContext.destination);
 
-        source.onended =  async () => {
+        source.onended = async () => {
             // Audio has ended, add your logic here
             await typeCodePromise;
             getNextInteraction();
@@ -535,5 +547,129 @@ input::placeholder {
     border-radius: 1rem;
     background: white;
     box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);
+}
+
+
+/**
+ * Tooltip Styles
+ */
+
+/* Base styles for the element that has a tooltip */
+[data-tooltip],
+.tooltip {
+    position: relative;
+    cursor: pointer;
+}
+
+/* Base styles for the entire tooltip */
+[data-tooltip]:before,
+[data-tooltip]:after,
+.tooltip:before,
+.tooltip:after {
+    position: absolute;
+    visibility: hidden;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
+    filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+    opacity: 0;
+    -webkit-transition:
+        opacity 0.2s ease-in-out,
+        visibility 0.2s ease-in-out,
+        -webkit-transform 0.2s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+    -moz-transition:
+        opacity 0.2s ease-in-out,
+        visibility 0.2s ease-in-out,
+        -moz-transform 0.2s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+    transition:
+        opacity 0.2s ease-in-out,
+        visibility 0.2s ease-in-out,
+        transform 0.2s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    pointer-events: none;
+}
+
+/* Show the entire tooltip on hover and focus */
+[data-tooltip]:hover:before,
+[data-tooltip]:hover:after,
+[data-tooltip]:focus:before,
+[data-tooltip]:focus:after,
+.tooltip:hover:before,
+.tooltip:hover:after,
+.tooltip:focus:before,
+.tooltip:focus:after {
+    visibility: visible;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+    filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=100);
+    opacity: 1;
+}
+
+/* Base styles for the tooltip's directional arrow */
+.tooltip:before,
+[data-tooltip]:before {
+    z-index: 1001;
+    border: 6px solid transparent;
+    background: transparent;
+    content: "";
+}
+
+/* Base styles for the tooltip's content area */
+.tooltip:after,
+[data-tooltip]:after {
+    z-index: 1000;
+    padding: 8px;
+    width: 160px;
+    background-color: #000;
+    background-color: hsla(0, 0%, 20%, 0.9);
+    color: #fff;
+    content: attr(data-tooltip);
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+/* Directions */
+
+/* Top (default) */
+[data-tooltip]:before,
+[data-tooltip]:after,
+.tooltip:before,
+.tooltip:after,
+.tooltip-top:before,
+.tooltip-top:after {
+    bottom: 100%;
+    left: 50%;
+}
+
+[data-tooltip]:before,
+.tooltip:before,
+.tooltip-top:before {
+    margin-left: -6px;
+    margin-bottom: -12px;
+    border-top-color: #000;
+    border-top-color: hsla(0, 0%, 20%, 0.9);
+}
+
+/* Horizontally align top/bottom tooltips */
+[data-tooltip]:after,
+.tooltip:after,
+.tooltip-top:after {
+    margin-left: -80px;
+}
+
+[data-tooltip]:hover:before,
+[data-tooltip]:hover:after,
+[data-tooltip]:focus:before,
+[data-tooltip]:focus:after,
+.tooltip:hover:before,
+.tooltip:hover:after,
+.tooltip:focus:before,
+.tooltip:focus:after,
+.tooltip-top:hover:before,
+.tooltip-top:hover:after,
+.tooltip-top:focus:before,
+.tooltip-top:focus:after {
+    -webkit-transform: translateY(-12px);
+    -moz-transform: translateY(-12px);
+    transform: translateY(-12px);
 }
 </style>
