@@ -228,7 +228,10 @@ const processAudio = async (res: any) => {
         source.onended = async () => {
             // Audio has ended, add your logic here
             await typeCodePromise;
-            getNextInteraction();
+            // Set a 2-second delay before calling getNextInteraction
+            setTimeout(() => {
+                getNextInteraction();
+            }, 2000);  // 2000 ms = 2 seconds
 
         };
 
