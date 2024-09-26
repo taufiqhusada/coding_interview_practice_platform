@@ -9,10 +9,29 @@
             </div>
         </div>
     </div>
-    <div class="chat mt-3">
+
+    <!-- <button class="btn btn-primary mt-3" @click="toggleTranscript">
+        {{ isTranscriptVisible ? 'Hide Transcript' : 'Show Transcript' }}
+    </button> -->
+
+    <button v-if="!isRecording" @click="startRecording" class="btn btn-primary mt-3">
+        Start Session
+    </button>
+    <button v-else @click="stopRecording" class="btn btn-outline-danger mt-3">
+        Stop Session
+    </button>
+
+    <button @click="getResponseFromGPT" class="btn btn-outline-primary mt-3" style="margin-left: 20px;">
+        Get Response
+    </button>
+
+
+    <div v-if="isTranscriptVisible" class="chat mt-3">
         <div class="contact">
-            <div class="name">Live Conversation</div>
+            <div class="name">Live Transcript</div>
         </div>
+
+        <!-- Conditionally render the transcript -->
         <div id="chat-messages" class="messages" ref="messages">
             <div v-for="(message, index) in chatMessages" :key="index">
                 <div :class="message.role === 'interviewee' ? 'message interviewee' : 'message interviewer'">
@@ -24,30 +43,24 @@
                     <div v-else>
                         <span v-html="message.content"></span>
                     </div>
-
                 </div>
             </div>
         </div>
+
+        <!-- Other existing content (e.g., recording button) -->
         <div class="d-flex flex-row m-2">
             <div class="form-group" style="width: 100%;">
                 <select id="languageSelect" class="form-select">
                     <option value="active">Active</option>
                     <option value="passive">Passive</option>
                     <option value="random">Random</option>
-                    <!-- Add more languages as needed -->
                 </select>
             </div>
             <div class="input" style="width: 200px;">
-                <button v-if="!isRecording" @click="startRecording" class="btn btn-primary" style="width: 200px;">Start
-                    Session</button>
-                <button v-else @click="stopRecording" class="btn btn-outline-danger" style="width: 200px;">Stop
-                    Session</button>
+
             </div>
-
         </div>
-
     </div>
-
 </template>
 
 
@@ -104,9 +117,25 @@ export default defineComponent({
                                 <p>Note: [9,4] is also accepted.</p>`,
             silenceTimer: undefined as ReturnType<typeof setTimeout> | undefined,
             isSendingMessage: false,
+            isTranscriptVisible: true,
+            isManualModeReply: true,
         };
     },
+
     methods: {
+        toggleTranscript() {
+            this.isTranscriptVisible = !this.isTranscriptVisible;
+        },
+        // Define the keydown handler
+        handleKeydown(event: KeyboardEvent) {
+            // Check if Ctrl+Space (Windows/Linux) or Cmd+Space (Mac) is pressed
+            if ((event.ctrlKey || event.metaKey) && event.code === 'KeyM') {
+                console.log("button pressed")
+                event.preventDefault(); // Prevent the default browser behavior
+                this.getResponseFromGPT(); // Call the method
+            }
+        },
+
         startRecording() {
             this.isRecording = true;
 
@@ -210,28 +239,42 @@ export default defineComponent({
                     }
                 }
 
-                // Set a new silence timer
-                this.silenceTimer = setTimeout(() => {
-                    if (this.ws && currentTranscript.trim() !== '') {
-                        // Add or update the user's message
-                        if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
-                            this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: currentTranscript + interimTranscript };
-                        } else {
-                            return
-                        }
-                        this.scrollToBottom();
-
-                        this.isSendingMessage = true;
-                        this.recognition?.stop();
-                        
-                        this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
-                        
-                        console.log("Silence detected, sending message");
-                        this.ws.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
-                        this.scrollToBottom();
-                        currentTranscript = '';
+                if (this.isManualModeReply) { // manual mode reply
+                    // Add or update the user's message
+                    if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
+                        this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: currentTranscript + interimTranscript };
+                    } else {
+                        return
                     }
-                }, 2000);
+                    this.scrollToBottom();
+                    currentTranscript = '';
+
+
+                } else {
+                    // Set a new silence timer
+                    this.silenceTimer = setTimeout(() => {
+                        if (this.ws && currentTranscript.trim() !== '') {
+                            // Add or update the user's message
+                            if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
+                                this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: currentTranscript + interimTranscript };
+                            } else {
+                                return
+                            }
+                            this.scrollToBottom();
+
+                            this.isSendingMessage = true;
+                            this.recognition?.stop();
+
+                            this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+
+                            console.log("Silence detected, sending message");
+                            this.ws.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
+                            this.scrollToBottom();
+                            currentTranscript = '';
+                        }
+                    }, 2000);
+                }
+
             };
 
             this.recognition.onerror = (event) => {
@@ -240,7 +283,7 @@ export default defineComponent({
 
             this.recognition.onspeechstart = (e) => {
                 console.log("restarted")
-                clearTimeout(this.silenceTimer); 
+                clearTimeout(this.silenceTimer);
                 this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
                 this.scrollToBottom();
             }
@@ -270,14 +313,14 @@ export default defineComponent({
                 if (response.status === 200) {
                     // Update the feedback field with the response from GPT-4
                     console.log(response.data)
-                    
+
                     const sessionId = response.data["session_id"];
                     const feedback = response.data["feedback"]
-                    
+
                     console.log(sessionId)
                     console.log(feedback)
 
-                    Cookies.set('sessionID', sessionId,  { expires: 120 / (24 * 60) });
+                    Cookies.set('sessionID', sessionId, { expires: 120 / (24 * 60) });
                     router.push('/feedback');
 
                 } else {
@@ -314,6 +357,29 @@ export default defineComponent({
                 });
             }
         },
+
+        getResponseFromGPT() {
+            this.isSendingMessage = true;
+            this.recognition?.stop();
+
+            this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+
+            console.log("Silence detected, sending message");
+            this.ws?.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
+            this.scrollToBottom();
+        },
+
+        
+    },
+
+    mounted() {
+        console.log("mounted")
+        // Bind the event on component mount
+        window.addEventListener('keydown', (event) => this.handleKeydown(event));
+    },
+    beforeUnmount() {
+        // Unbind the event on component unmount
+        window.removeEventListener('keydown', this.handleKeydown);
     },
 
     watch: {
