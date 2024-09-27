@@ -11,11 +11,11 @@
     </div>
 
     <div class="d-flex align-items-center mt-3">
-        <button v-if="!isRecording" @click="startRecording" class="btn btn-primary"
+        <button v-if="!isRecording && !isSendingMessage" @click="startRecording" class="btn btn-primary"
             style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
             Start Session
         </button>
-        <button v-else @click="stopRecording" class="btn btn-outline-danger"
+        <button v-if="isRecording" @click="stopRecording" class="btn btn-outline-danger"
             style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
             Stop Session
         </button>
