@@ -164,7 +164,7 @@ const getNextInteraction = async () => {
 
 const typeCode = (codeContent: string) => {
     return new Promise((resolve) => {
-        const typingSpeed = 50; // Typing speed in milliseconds
+        const typingSpeed = 150; // Typing speed in milliseconds
         const lines = codeContent.split("\n"); // Split code into lines
         let currentLine = 0;
         let currentChar = 0;
