@@ -35,15 +35,12 @@
         </div>
 
         <div class="form-group mb-0" style="flex-grow: 1;"> <!-- Use flex-grow for better responsiveness -->
-            <select id="interactionMode" class="form-select" style="padding: 0.375rem 0.75rem; min-width: 150px;">
+            <select id="interactionMode" class="form-select" style="padding: 0.375rem 0.75rem; min-width: 150px;" @change="changeInteractionMode" v-model="selectedInteractionMode">
                 <option value="manualReply">Manual Reply</option>
                 <option value="autoReplay">Auto Reply</option>
             </select>
         </div>
     </div>
-
-
-
 
 
     <div v-if="isTranscriptVisible && isRecording" class="chat mt-3">
@@ -142,7 +139,9 @@ export default defineComponent({
             isSendingMessage: false,
             isTranscriptVisible: true,
             isManualModeReply: true,
-            selectedInteractionMode: "manualReply"
+            selectedInteractionMode: "manualReply",
+            interimTranscript: '',
+            currentTranscript: '',
         };
     },
 
@@ -242,7 +241,7 @@ export default defineComponent({
             this.recognition.continuous = true;
             this.recognition.interimResults = true;
 
-            let currentTranscript = '';
+            this.currentTranscript = '';
 
             this.recognition.onstart = () => {
                 console.log('Speech recognition is on. Speak into the microphone.');
@@ -254,33 +253,28 @@ export default defineComponent({
                     clearTimeout(this.silenceTimer);
                 }
 
-                let interimTranscript = '';
+                this.interimTranscript = '';
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
-                        currentTranscript += event.results[i][0].transcript;
+                        this.currentTranscript += event.results[i][0].transcript;
                     } else {
-                        interimTranscript += event.results[i][0].transcript;
+                        this.interimTranscript += event.results[i][0].transcript;
                     }
                 }
 
                 if (this.isManualModeReply) { // manual mode reply
                     // Add or update the user's message
-                    if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
-                        this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: currentTranscript + interimTranscript };
-                    } else {
-                        return
-                    }
-                    this.scrollToBottom();
-                    currentTranscript = '';
+                    
 
 
                 } else {
+                    console.log('auto')
                     // Set a new silence timer
                     this.silenceTimer = setTimeout(() => {
-                        if (this.ws && currentTranscript.trim() !== '') {
+                        if (this.ws && this.currentTranscript.trim() !== '') {
                             // Add or update the user's message
                             if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
-                                this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: currentTranscript + interimTranscript };
+                                this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: this.currentTranscript + this.interimTranscript };
                             } else {
                                 return
                             }
@@ -294,7 +288,7 @@ export default defineComponent({
                             console.log("Silence detected, sending message");
                             this.ws.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
                             this.scrollToBottom();
-                            currentTranscript = '';
+                            this.currentTranscript = '';
                         }
                     }, 2000);
                 }
@@ -383,6 +377,12 @@ export default defineComponent({
         },
 
         getResponseFromGPT() {
+            if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
+                this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: this.currentTranscript + this.interimTranscript };
+            } 
+            this.scrollToBottom();
+            this.currentTranscript = '';
+
             this.isSendingMessage = true;
             this.recognition?.stop();
 
