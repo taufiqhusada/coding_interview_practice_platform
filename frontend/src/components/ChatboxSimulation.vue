@@ -133,8 +133,7 @@ export default defineComponent({
                                 <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
 
                                 <b>Example 2:</b>
-                                <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>
-                                <p>Note: [9,4] is also accepted.</p>`,
+                                <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>`,
             silenceTimer: undefined as ReturnType<typeof setTimeout> | undefined,
             isSendingMessage: false,
             isTranscriptVisible: true,
