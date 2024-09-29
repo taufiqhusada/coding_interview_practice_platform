@@ -2,6 +2,7 @@ import { type RouteRecordRaw, createRouter, createWebHistory } from 'vue-router'
 import Main from '@/views/Main.vue';
 import Example from '@/views/Example.vue';
 import Feedback from '@/views/Feedback.vue';
+import GranularSimulation from '@/views/GranularSimulation.vue'
 
 const routes = [
   {
@@ -13,6 +14,11 @@ const routes = [
     path: '/feedback',
     name: 'Feedback',
     component: Feedback,
+  },
+  {
+    path: '/guidedSimulation',
+    name: 'GranularSimulation',
+    component: GranularSimulation,
   },
   {
     path: '/',
