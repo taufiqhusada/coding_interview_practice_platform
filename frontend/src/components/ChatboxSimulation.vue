@@ -235,6 +235,7 @@ export default defineComponent({
                     this.isSendingMessage = false;
                     // Audio has ended, add your logic here
                     this.recognition?.start();
+                    this.currentTranscript = '';
 
                 };
 
@@ -253,7 +254,7 @@ export default defineComponent({
             this.recognition.interimResults = true;
 
             this.currentTranscript = '';
-
+            
             this.recognition.onstart = () => {
                 console.log('Speech recognition is on. Speak into the microphone.');
             };
@@ -263,7 +264,8 @@ export default defineComponent({
                 if (this.silenceTimer) {
                     clearTimeout(this.silenceTimer);
                 }
-
+                
+                
                 this.interimTranscript = '';
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {

@@ -2,7 +2,7 @@
   <div class="container">
     <div class="row">
       <div class="col mt-3">
-        <h4>Guided practice</h4>
+        <!-- <h4>Guided practice</h4> -->
         <!-- <b>Step 1: Asking Clarifying Question</b> -->
         <!-- Floating Icon and Popup above the languageSelect -->
         <div class="icon-container mt-2">

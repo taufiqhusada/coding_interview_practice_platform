@@ -147,7 +147,10 @@ def call_open_api(input_data):
     messages=[
             {"role": "system", 
              "content": f"""
-                        You are an experienced technical interviewer conducting a coding interview. Your goal is to assess the candidate's problem-solving skills, coding ability, and communication. The coding problem is the following:
+                        You are an experienced technical interviewer conducting a coding interview. Your goal is to assess the candidate's problem-solving skills, coding ability, and communication. 
+                            Make sure your communication is short and concise
+                        
+                            The coding problem is the following:
 
                             Problem:
                             ```{problem}```
