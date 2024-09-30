@@ -8,13 +8,16 @@
       </a>
       <div class="navbar-items d-flex">
         <a class="nav-link" :class="{ 'current-link': currentPage === 'simulation' }" href="/">
-          1. Simulation
+          Simulation
+        </a>
+        <a class="nav-link" :class="{ 'current-link': currentPage === 'guidedPractice' }" href="/guidedSimulation">
+          Guided Practice
         </a>
         <a class="nav-link" :class="{ 'current-link': currentPage === 'feedback' }" href="/feedback">
-          2. Assessment
+          Assessment
         </a>
         <a class="nav-link" :class="{ 'current-link': currentPage === 'example' }" href="/example">
-          3. Example
+          Example
         </a>
         <!-- <a class="nav-link" :class="{ 'current-link': currentPage === 'comparison' }" href="/comparison">
           4. Comparison

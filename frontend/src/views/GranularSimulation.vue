@@ -1,5 +1,5 @@
 <template>
-    <Header :currentPage="'granularSimulation'"></Header>
+    <Header :currentPage="'guidedPractice'"></Header>
     <div class="container">
       <GranularSimulation></GranularSimulation>
     </div>
