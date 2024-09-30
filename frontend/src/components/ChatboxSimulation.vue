@@ -417,8 +417,8 @@ export default defineComponent({
             return this.chatMessages;
         },
 
-        clearTranscriptSession(idxUntil: number){
-            this.chatMessages = this.chatMessages.slice(0, idxUntil);
+        clearTranscriptSession(idxStart: number){
+            this.chatMessages = this.chatMessages.slice(idxStart);
         }
     },
 

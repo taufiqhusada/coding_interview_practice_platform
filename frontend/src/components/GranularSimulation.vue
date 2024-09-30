@@ -13,16 +13,29 @@
 
           <!-- Popup message (to the right of the icon) -->
           <div v-if="showPopup" class="popup-message">
-            <p>{{ popupMessage }}</p>
+            <loader_simple v-if="currState == PracticeState.WaitingForFeedback"
+              style="margin-left: 20px;"></loader_simple>
+            <div v-else>
+              <div v-show="currState != PracticeState.NotStarted">
+                <b>Step {{ currentStepIdx + 1 }} : {{ listStep[currentStepIdx] }}</b>
+              </div>
 
-            <div v-if="currState.value==PracticeState.Practicing" class="mt-3">
-              <p>After practicing this section, click get feedback to get immediate feedback</p>
-              <button class="btn btn-outline-primary mt-1" style="font-size: 90%;">Get Feedback</button>
-
+              <p>{{ popupMessage }}</p>
+              <div v-show="currState == PracticeState.Practicing" class="mt-3">
+                <p>After practicing this step, click get feedback button to get immediate feedback</p>
+                <button class="btn btn-outline-primary mt-1" style="font-size: 90%;" @click="getFeedback">Get
+                  Feedback</button>
+              </div>
+              <div v-show="currState == PracticeState.FeedbackReceived" class="mt-3">
+                <p>Do you want to try again this step or go to next step?</p>
+                <button class="btn btn-outline-primary mt-1" style="font-size: 90%;" @click="retry">Retry</button>
+                <button class="btn btn-outline-primary mt-1" style="font-size: 90%; margin-left: 20px;"
+                  @click="nextStep">Next Step</button>
+              </div>
             </div>
           </div>
 
-          
+
         </div>
 
         <div class="form-group mt-3">
@@ -35,13 +48,14 @@
           </select>
         </div>
 
-        <codemirror v-model="code" placeholder="" :style="{ height: '60vh' }" :autofocus="true" :indent-with-tab="true" style="max-width:38rem; font-size: smaller;"
-          :tab-size="2" :extensions="extensions" @ready="handleReady" @change="log('change', $event)"
-          @focus="log('focus', $event)" @blur="log('blur', $event)" />
+        <codemirror v-model="code" placeholder="" :style="{ height: '60vh' }" :autofocus="true" :indent-with-tab="true"
+          style="max-width:38rem; font-size: smaller;" :tab-size="2" :extensions="extensions" @ready="handleReady"
+          @change="log('change', $event)" @focus="log('focus', $event)" @blur="log('blur', $event)" />
       </div>
 
       <div class="col">
-        <ChatboxSimulation :code="code"></ChatboxSimulation>
+        <ChatboxSimulation ref="chatboxSimRef" :code="code" @update:PracticeState="updatePracticeState">
+        </ChatboxSimulation>
       </div>
     </div>
   </div>
@@ -58,17 +72,21 @@ import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorState, Compartment } from '@codemirror/state'
 import hljs from 'highlight.js';
 import ChatboxSimulation from './ChatboxSimulation.vue';
+import axios from 'axios';
+import loader_simple from './misc/loader_simple.vue'
 
 const PracticeState = {
   NotStarted: -1,
   Practicing: 0,
-  FeedbackReceived: 1
+  FeedbackReceived: 1,
+  WaitingForFeedback: 2,
 }
 
 export default defineComponent({
   components: {
     Codemirror,
-    ChatboxSimulation
+    ChatboxSimulation,
+    loader_simple
   },
   setup() {
     const code = ref(``)
@@ -77,13 +95,29 @@ export default defineComponent({
 
     const view = shallowRef()
     const showPopup = ref(true) // Control popup visibility
-    const popupMessage = ref("Let's start the practice by clicking the start session")
-    const listStep = ["Clarification", "Proposing Solution"]
-    const listMessage = ["Try to ask clarifying questions", "Try to explain your approach"]
-    const startStopIdxForFeedback = ref([1,1])
+    const popupMessage = ref("Ready to start? Click the start session button to begin your practice session!")
+
+    const listStep = ["Understanding", "Initial Ideation", "Idea Justification", "Implementation", "Review (Dry Run)", "Evaluation"]
+
+    const listMessage = [
+      "Start by asking a few clarifying questions and suggesting a test case to show your understanding.",
+      "Share some initial ideas on how you might approach solving the problem.",
+      "Explain why you chose this approach and why it works for the problem.",
+      "Begin coding and talk through each step as you work through the solution.",
+      "Walk through your code with a test case to ensure it runs as expected.",
+      "Review your solution and consider any improvements or edge cases you might have missed."
+    ]
+
+    let prevLastIdx = 0
     const currentStepIdx = ref(-1)
     const currState = ref(PracticeState.NotStarted) // -1 not started, 0 start and currently practicing (show feedback button), 1 after get feedback (show retry or next section).
 
+    const chatboxSimRef = ref(null);
+    const chatMessages = ref([]);
+
+    const backendURL = "/api"
+
+    console.log(currState)
     const handleReady = (payload) => {
       view.value = payload.view
     }
@@ -110,6 +144,65 @@ export default defineComponent({
       // }
     }
 
+    const updatePracticeState = (state) => {
+      currState.value = state;
+
+      currentStepIdx.value += 1
+      popupMessage.value = listMessage[currentStepIdx.value]
+    }
+
+    const getFeedback = async () => {
+      currState.value = PracticeState.WaitingForFeedback;
+      if (chatboxSimRef.value) {
+        chatMessages.value = chatboxSimRef.value.getTranscriptSession();  // Call the function
+        // save 
+        try {
+          // Make a POST request to your API
+          const requestBody = {
+            transcript: chatMessages.value.slice(prevLastIdx),
+            phase: listStep[currentStepIdx.value]
+          };
+          const response = await axios.post(`${backendURL}/getFeedback/specific`, requestBody);
+          if (response.status === 200) {
+            // Update the feedback field with the response from GPT-4
+            console.log(response.data)
+
+            const feedback = response.data["feedback"]
+
+            currState.value = PracticeState.FeedbackReceived;
+            popupMessage.value = feedback;
+
+          } else {
+            // Handle API response error
+            console.error('Failed to save and get feedback', response.status, response.data);
+          }
+        } catch (error) {
+          // Handle network or other errors
+          console.error('Error while saving and get feedback', error);
+        }
+
+
+
+      }
+    };
+
+    const retry = () => {
+      // TODO: reset transcript
+      chatboxSimRef.value.clearTranscriptSession(prevLastIdx + 1);
+
+      popupMessage.value = listMessage[currentStepIdx.value];
+      currState.value = PracticeState.Practicing;
+    };
+
+    const nextStep = () => {
+      currentStepIdx.value += 1;
+      popupMessage.value = listMessage[currentStepIdx.value];
+
+      prevLastIdx = chatMessages.value.length;
+      currState.value = PracticeState.Practicing;
+
+    }
+
     return {
       code,
       selectedLanguage,
@@ -121,7 +214,14 @@ export default defineComponent({
       log: console.log,
       popupMessage,
       currState,
-      PracticeState
+      PracticeState,
+      updatePracticeState,
+      chatboxSimRef,
+      getFeedback,
+      retry,
+      nextStep,
+      listStep,
+      currentStepIdx
     }
   }
 })
