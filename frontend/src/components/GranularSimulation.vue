@@ -108,7 +108,7 @@ export default defineComponent({
       "Review your solution and consider any improvements or edge cases you might have missed."
     ]
 
-    let prevLastIdx = 0
+    let prevLastInterviewerChatIdx = 0
     const currentStepIdx = ref(-1)
     const currState = ref(PracticeState.NotStarted) // -1 not started, 0 start and currently practicing (show feedback button), 1 after get feedback (show retry or next section).
 
@@ -159,7 +159,7 @@ export default defineComponent({
         try {
           // Make a POST request to your API
           const requestBody = {
-            transcript: chatMessages.value.slice(prevLastIdx),
+            transcript: chatMessages.value.slice(prevLastInterviewerChatIdx),
             phase: listStep[currentStepIdx.value]
           };
           const response = await axios.post(`${backendURL}/getFeedback/specific`, requestBody);
@@ -188,7 +188,8 @@ export default defineComponent({
 
     const retry = () => {
       // TODO: reset transcript
-      chatboxSimRef.value.clearTranscriptSession(prevLastIdx + 1);
+      console.log(prevLastInterviewerChatIdx);
+      chatboxSimRef.value.clearTranscriptSession(prevLastInterviewerChatIdx + 1);
 
       popupMessage.value = listMessage[currentStepIdx.value];
       currState.value = PracticeState.Practicing;
@@ -198,7 +199,12 @@ export default defineComponent({
       currentStepIdx.value += 1;
       popupMessage.value = listMessage[currentStepIdx.value];
 
-      prevLastIdx = chatMessages.value.length;
+
+      prevLastInterviewerChatIdx = chatMessages.value.length-1;
+      if (chatMessages.value[chatMessages.value.length-1].role == "interviewee" ){
+        prevLastInterviewerChatIdx -= 1;
+      }
+
       currState.value = PracticeState.Practicing;
 
     }

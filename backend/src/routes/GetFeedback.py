@@ -42,7 +42,7 @@ def get_general_feedback():
     prompt = f"""
         "I have a transcript of a coding interview where the interviewee is required to think aloud while solving a problem. Based on the transcript provided below, please give detailed feedback on the interviewee's performance, focusing on the following four aspects. Format the response in JSON with this structure:
             {{
-                "understanding": "Feedback on how the interviewee demonstrated their understanding of the problem by asking clarifying questions and proposing a test case.",
+                "understanding": "Feedback on how the interviewee demonstrated their understanding of the problem by asking clarifying questions and/or proposing a test case.",
                 "initial_ideation": "Feedback on how the interviewee brainstormed and proposed their initial ideas.",
                 "idea_justification": "Feedback on how the interviewee justified their proposed approach and explained why it was suitable.",
                 "implementation": "Feedback on how the interviewee communicated their thought process while coding the solution.",
@@ -54,7 +54,7 @@ def get_general_feedback():
 
             Here are the specific phases to assess:
 
-            1. Understanding: Evaluate how effectively the interviewee asked clarifying questions and whether they proposed a relevant test case to demonstrate their understanding of the problem. Did they fully grasp the requirements, constraints, or edge cases? Were there missed opportunities to seek more clarity?
+            1. Understanding: Evaluate whether they proposed a relevant test case to demonstrate their understanding of the problem or/and how effectively the interviewee asked clarifying questions. Did they fully grasp the requirements? Were there missed opportunities to seek more clarity?
 
             2. Initial Ideation: Assess how the interviewee brainstormed initial ideas and solutions. Did they consider multiple approaches or stick with a single idea? Did they clearly explain their thought process?
 
@@ -127,7 +127,7 @@ def get_specific_feedback():
     openai = init_openai_config()
 
     dict_phase = {
-        "Understanding": "Understanding: Evaluate how effectively the interviewee asked clarifying questions and whether they proposed a relevant test case to demonstrate their understanding of the problem. Did they fully grasp the requirements, constraints, or edge cases? Were there missed opportunities to seek more clarity?",
+        "Understanding": "Understanding:  Evaluate whether they proposed a relevant test case to demonstrate their understanding of the problem or/and how effectively the interviewee asked clarifying questions. Did they fully grasp the requirements? Were there missed opportunities to seek more clarity?",
 
         "Initial Ideation": "Initial Ideation: Assess how the interviewee brainstormed initial ideas and solutions. Did they consider multiple approaches or stick with a single idea? Did they clearly explain their thought process?",
 

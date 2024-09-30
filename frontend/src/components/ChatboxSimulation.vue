@@ -158,7 +158,7 @@ export default defineComponent({
         // Define the keydown handler
         handleKeydown(event: KeyboardEvent) {
             // Check if Ctrl+Space (Windows/Linux) or Cmd+Space (Mac) is pressed
-            if (this.isManualModeReply && (event.ctrlKey || event.metaKey) && event.code === 'KeyM') {
+            if (this.isManualModeReply && !this.isSendingMessage && (event.ctrlKey || event.metaKey) && event.code === 'KeyM') {
                 console.log("button pressed")
                 event.preventDefault(); // Prevent the default browser behavior
                 this.getResponseFromGPT(); // Call the method
@@ -313,7 +313,9 @@ export default defineComponent({
             this.recognition.onspeechstart = (e) => {
                 console.log("restarted")
                 clearTimeout(this.silenceTimer);
-                this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
+                if (this.chatMessages.length > 0 && (this.chatMessages[this.chatMessages.length - 1].role != "interviewee" || !this.chatMessages[this.chatMessages.length - 1].isTyping)){
+                    this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
+                }   
                 this.scrollToBottom();
             }
 
@@ -417,8 +419,15 @@ export default defineComponent({
             return this.chatMessages;
         },
 
-        clearTranscriptSession(idxStart: number){
-            this.chatMessages = this.chatMessages.slice(idxStart);
+        clearTranscriptSession(idxInterviewerStart: number){
+            this.chatMessages = this.chatMessages.slice(0, Math.min(idxInterviewerStart,this.chatMessages.length));
+            if (this.chatMessages.length > 0 && (this.chatMessages[this.chatMessages.length - 1].role != "interviewee" || !this.chatMessages[this.chatMessages.length - 1].isTyping)){
+                 this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
+            }
+
+            // TODO: bug when reset
+            this.interimTranscript = '';
+            this.currentTranscript = '';
         }
     },
 
