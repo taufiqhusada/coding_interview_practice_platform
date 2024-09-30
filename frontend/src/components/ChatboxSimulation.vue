@@ -108,6 +108,13 @@ interface ChatMessageBackend {
 }
 
 
+const PracticeState = {
+  NotStarted: -1,
+  Practicing: 0,
+  FeedbackReceived: 1
+}
+
+
 export default defineComponent({
     props: {
         code: {
@@ -191,6 +198,11 @@ export default defineComponent({
                 }
                 console.log('Socket.IO disconnected.');
             });
+
+            console.log('try to emit')
+
+            // emit to parent
+            this.$emit('update:PracticeState', PracticeState.Practicing); 
         },
 
         processResponse(res: any) {
@@ -399,6 +411,14 @@ export default defineComponent({
                 this.isManualModeReply = false;
             }
             console.log(this.isManualModeReply)
+        },
+
+        getTranscriptSession(): ChatMessage[] {
+            return this.chatMessages;
+        },
+
+        clearTranscriptSession(idxUntil: number){
+            this.chatMessages = this.chatMessages.slice(0, idxUntil);
         }
     },
 

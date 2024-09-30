@@ -42,26 +42,32 @@ def get_general_feedback():
     prompt = f"""
         "I have a transcript of a coding interview where the interviewee is required to think aloud while solving a problem. Based on the transcript provided below, please give detailed feedback on the interviewee's performance, focusing on the following four aspects. Format the response in JSON with this structure:
             {{
-            "clarification": "Feedback on how the interviewee asked clarifying questions.",
-            "ideation": "Feedback on how the interviewee proposed ideas and solutions.",
-            "communication_during_coding": "Feedback on how the interviewee communicated while coding.",
-            "dry_run": "Feedback on how the interviewee explained their code using provided examples or test cases."
+                "understanding": "Feedback on how the interviewee demonstrated their understanding of the problem by asking clarifying questions and proposing a test case.",
+                "initial_ideation": "Feedback on how the interviewee brainstormed and proposed their initial ideas.",
+                "idea_justification": "Feedback on how the interviewee justified their proposed approach and explained why it was suitable.",
+                "implementation": "Feedback on how the interviewee communicated their thought process while coding the solution.",
+                "review_dry_run": "Feedback on how the interviewee performed a dry run of their code, explaining the execution flow using test cases.",
+                "evaluation": "Feedback on how the interviewee evaluated their solution, including discussions of potential optimizations, edge cases, or improvements."
             }}
 
             make sure you assess it objectively.
 
             Here are the specific phases to assess:
 
-            1. Clarification: Evaluate how effectively the interviewee asked clarifying questions about the problem. Did they fully understand the requirements, constraints, or edge cases? Were there any missed opportunities to ask for more information?
+            1. Understanding: Evaluate how effectively the interviewee asked clarifying questions and whether they proposed a relevant test case to demonstrate their understanding of the problem. Did they fully grasp the requirements, constraints, or edge cases? Were there missed opportunities to seek more clarity?
 
-            2. Ideation: Assess how the interviewee proposed ideas and solutions. Did they consider multiple approaches, explain their thought process clearly, and propose feasible solutions?
+            2. Initial Ideation: Assess how the interviewee brainstormed initial ideas and solutions. Did they consider multiple approaches or stick with a single idea? Did they clearly explain their thought process?
 
-            3. Communication during coding: Provide feedback on how well the interviewee explained their code while writing it. Was their logic and reasoning easy to follow? Were there moments where communication broke down or became unclear?
+            3. Idea Justification: Evaluate how well the interviewee justified their solution. Did they explain why their approach was suitable or compare it to alternative solutions? Were they able to defend their choice of data structures, algorithms, or logic?
 
-            4. Dry run: Analyze how the interviewee walked through their code with provided examples or test cases. Did they clearly explain the flow of the code, identify potential issues, and consider additional edge cases?
+            4. Implementation: Provide feedback on how well the interviewee communicated their thought process while coding. Was their reasoning easy to follow? Were there gaps in their explanation or places where communication became unclear?
 
-            If the interviewee do not do the phases above then say it that they do not do it.
+            5. Review (Dry Run): Analyze how the interviewee performed a dry run of their code with a test case. Did they clearly explain the flow of execution, identify potential issues, or spot logical errors? Did they account for edge cases?
 
+            6. Evaluation: Provide feedback on how the interviewee evaluated their solution after coding. Did they discuss possible optimizations, improvements, or additional test cases to check for edge cases?
+
+            If the interviewee did not perform a phase, note that it was not done.
+            
             Transcript:  {str(transcript)}
 
         """
@@ -109,3 +115,64 @@ def retrieve_general_feedback():
         # Handle case where no transcript is found for the given sessionID
         return {'error': 'No transcript found for the given sessionID'}
 
+
+@getFeedbackBP.route('/getFeedback/specific', methods=['POST'])
+def get_specific_feedback():
+    data = request.json
+    transcript = data['transcript']
+    phase = data['phase']
+
+    print(transcript)
+
+    openai = init_openai_config()
+
+    dict_phase = {
+        "Understanding": "Understanding: Evaluate how effectively the interviewee asked clarifying questions and whether they proposed a relevant test case to demonstrate their understanding of the problem. Did they fully grasp the requirements, constraints, or edge cases? Were there missed opportunities to seek more clarity?",
+
+        "Initial Ideation": "Initial Ideation: Assess how the interviewee brainstormed initial ideas and solutions. Did they consider multiple approaches or stick with a single idea? Did they clearly explain their thought process?",
+
+        "Idea Justification": "Idea Justification: Evaluate how well the interviewee justified their proposed solution. Did they explain why their approach was suitable or compare it to alternative solutions? Were they able to defend their choice of data structures, algorithms, or logic?",
+
+        "Implementation": "Implementation: Provide feedback on how well the interviewee communicated their thought process while coding the solution. Was their logic and reasoning easy to follow? Were there gaps in their explanation or moments of unclear communication?",
+
+        "Review (Dry Run)": "Review (Dry Run): Analyze how the interviewee performed a dry run of their code using a test case. Did they clearly explain the flow of execution, identify potential issues, or spot logical errors? Did they account for edge cases?",
+
+        "Evaluation": "Evaluation: Provide feedback on how the interviewee evaluated their solution after coding. Did they discuss possible optimizations, improvements, or additional test cases to check for edge cases?"
+    }
+
+
+    prompt = f"""
+        "I have a transcript of a coding interview where the interviewee is required to think aloud while solving a problem. Based on the transcript provided below, please give detailed feedback on specific phase {phase} 
+
+            make sure you assess it objectively. 
+
+            Here the guideline specific phases to assess:
+
+            {dict_phase[phase]}
+
+            If the interviewee do not do the phase above then say it that they do not do it.
+
+            Transcript:  {str(transcript)}
+
+            LIMIT your answer to one sentence short and concise, 30 words max.
+
+        """
+
+    messages = [{
+        "role": "system",
+        "content": prompt
+        }]
+    print(messages)
+
+    gpt_response = openai.chat.completions.create(
+        model=os.getenv('OPENAI_GPT_MODEL'),
+        messages=messages,
+        temperature=0,
+    )
+
+    feedback = gpt_response.choices[0].message.content
+
+    print(feedback)
+
+    res = {'feedback': feedback}
+    return res

@@ -153,10 +153,12 @@ def call_open_api(input_data):
                             ```{problem}```
 
                             The candidate will implicitly follow these four steps:
-                            1. Ask Clarifying Questions: The candidate will ask some clarifying questions to ensure they fully understand the problem.
-                            2. Propose a Solution: Have the candidate outline their proposed solution, including the logic, data structures, and algorithms they plan to use.
-                            3. Code the Solution: As they code, the candidate will explain their thought process, detailing how their code addresses the problem step by step.
-                            4. Dry Run the Code: After coding, ask the candidate to simulate the execution of their code with a test case, explaining how each part of the code functions and what the expected output will be.
+                            1. Understanding: The candidate may ask clarifying questions to ensure they fully understand the problem and may propose an initial test case to demonstrate their understanding of the requirements.
+                            2. Initial Ideation: The candidate will brainstorm initial ideas on how to solve the problem.
+                            3. Idea Justification: The candidate will justify their approach, explaining why the chosen solution is suitable.
+                            4. Implementation: The candidate will code the solution while thinking aloud to describe their thought process.
+                            5. Review (Dry Run): After coding, the candidate will dry-run their code with a test case, walking through the logic step by step.
+                            6. Evaluation: The candidate will evaluate their solution, discussing possible optimizations, edge cases, and any necessary improvements.
 
                             Throughout the interview:
                             - Prompt the candidate to think aloud and explain their reasoning at each step.
