@@ -21,11 +21,11 @@
               </div>
 
               <p>{{ popupMessage }}</p>
-              <div v-show="currState == PracticeState.Practicing" class="mt-3">
+              <!-- <div v-show="currState == PracticeState.Practicing" class="mt-3">
                 <p>After practicing this step, click get feedback button to get immediate feedback</p>
                 <button class="btn btn-outline-primary mt-1" style="font-size: 90%;" @click="getFeedback">Get
                   Feedback</button>
-              </div>
+              </div> -->
               <div v-show="currState == PracticeState.FeedbackReceived" class="mt-3">
                 <p>Do you want to try again this step or go to next step?</p>
                 <button class="btn btn-outline-primary mt-1" style="font-size: 90%;" @click="retry">Retry</button>
@@ -54,7 +54,7 @@
       </div>
 
       <div class="col">
-        <ChatboxSimulation ref="chatboxSimRef" :code="code" @update:PracticeState="updatePracticeState">
+        <ChatboxSimulation ref="chatboxSimRef" :code="code" @update:PracticeState="updatePracticeState" @update:Phase="updatePhase">
         </ChatboxSimulation>
       </div>
     </div>
@@ -115,7 +115,8 @@ export default defineComponent({
     const chatboxSimRef = ref(null);
     const chatMessages = ref([]);
 
-    const backendURL = "/api"
+    const backendURL = "/api";
+    let nextStepIdx = -1;
 
     console.log(currState)
     const handleReady = (payload) => {
@@ -149,6 +150,20 @@ export default defineComponent({
 
       currentStepIdx.value += 1
       popupMessage.value = listMessage[currentStepIdx.value]
+    }
+
+    const updatePhase = (newPhase) => {
+      const currPhase = listStep[currentStepIdx.value]
+      if (currPhase != newPhase){
+        let temp = 0
+        for (let i = 0; i<listStep.length; ++i){
+          if (listStep[i] == newPhase){
+            nextStepIdx = i;
+            getFeedback();
+            return
+          }
+        }
+      }
     }
 
     const getFeedback = async () => {
@@ -196,7 +211,15 @@ export default defineComponent({
     };
 
     const nextStep = () => {
-      currentStepIdx.value += 1;
+      if (nextStepIdx != -1){
+        currentStepIdx.value = nextStepIdx;
+        nextStepIdx = -1;
+
+      } else {
+        currentStepIdx.value += 1;
+
+      }
+
       popupMessage.value = listMessage[currentStepIdx.value];
 
 
@@ -227,7 +250,8 @@ export default defineComponent({
       retry,
       nextStep,
       listStep,
-      currentStepIdx
+      currentStepIdx,
+      updatePhase
     }
   }
 })

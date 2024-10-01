@@ -209,6 +209,12 @@ export default defineComponent({
 
             const ttsResponseData = res['audio_data'];
             const gptResponseText = res['text_response'];
+            const phase = res['phase']
+
+            this.$emit('update:Phase', phase); 
+
+            
+            console.log(phase)
 
             this.recognition?.stop(); // I don't know if this is necessary
 
