@@ -1,6 +1,15 @@
 <template>
     <div class="row">
         <div class="col-6">
+            <div class="icon-container mt-3">
+                <!-- Floating Icon -->
+                <div class="floating-icon" @click="togglePopup">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div v-if="showPopup" class="popup-message">
+                    <p>{{ popupMessage }}</p>
+                </div>
+            </div>
             <div class="chat mt-3">
                 <div class="contact">
                     <div class="name">Learn from example</div>
@@ -8,25 +17,28 @@
                 <div id="chat-messages" class="messages" ref="messages">
                     <div v-for="(message, index) in currChatMessages" :key="index">
                         <div :class="[
-                                'message',
-                                message.role === 'interviewee' ? 'interviewee' : 'interviewer',
-                                message.explanation !== '' ? 'tooltip-top' : ''
-                            ]"
-                            v-if="message.explanation !== ''"
-                            :data-tooltip="message.explanation"
-                        >
+                    'message',
+                    message.role === 'interviewee' ? 'interviewee' : 'interviewer',
+                    message.explanation !== '' ? 'tooltip-top' : ''
+                ]" v-if="message.explanation !== ''" :data-tooltip="message.explanation">
                             <span>{{ message.content }}</span>
                         </div>
                         <!-- If no explanation, render without tooltip -->
-                        <div :class="['message', message.role === 'interviewee' ? 'interviewee' : 'interviewer']" 
+                        <div :class="['message', message.role === 'interviewee' ? 'interviewee' : 'interviewer']"
                             v-else>
                             <span>{{ message.content }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="input">
-                    <!-- <button @click="generateExample" class="btn btn-primary">Generate Example</button> -->
-                    <button @click="getNextInteraction" class="btn btn-primary" style="margin-left: 20px;">Next</button>
+                    <button v-if="isPaused" @click="continueInteraction" class="btn btn-primary" style="">Continue</button>
+                    <div v-else>
+                         <!-- <button @click="generateExample" class="btn btn-primary">Generate Example</button> -->
+                        <button @click="pauseInteraction" class="btn btn-outline-primary" style="">Pause</button>
+                        <button @click="getNextInteraction" class="btn btn-primary" style="margin-left: 20px;">Next</button>
+                    </div>
+                   
+
                 </div>
             </div>
 
@@ -106,6 +118,12 @@ const currChatMessages = ref<ChatMessage[]>([]);  // Using ref for reactivity
 
 const messages = ref<HTMLDivElement | null>(null);// Create a ref for the chat-messages div
 
+const showPopup = ref(true) // Control popup visibility
+const popupMessage = ref("Ready to learn? Click the start button to see the example think-aloud process")
+
+const isPaused = ref(false)
+
+let currentAudioSource: AudioBufferSourceNode;
 
 
 const backendURL = '/api';
@@ -144,6 +162,10 @@ onMounted(async () => {
 });
 
 const getNextInteraction = async () => {
+    if (isPaused.value){
+        return;
+    }
+
     const nextMessage = allChatMessages.value[currentIdxChat.value];
     if (nextMessage) {
         currChatMessages.value.push({
@@ -154,6 +176,13 @@ const getNextInteraction = async () => {
             audio_base64: "",
         });
 
+        if (nextMessage.explanation == "" || nextMessage.role == 'interviewer'){
+            showPopup.value = false;
+        } else {
+            showPopup.value = true;
+            popupMessage.value = nextMessage.explanation;
+        }
+
         scrollToBottom();
 
         processAudio(nextMessage);
@@ -161,6 +190,19 @@ const getNextInteraction = async () => {
     }
 };
 
+
+const pauseInteraction = async () => {
+    if (currentAudioSource) {
+        currentAudioSource.stop(); // Stop the previous audio source
+    }
+
+    isPaused.value= true;
+}
+
+const continueInteraction = async () => {
+    isPaused.value= false;
+    getNextInteraction();
+}
 
 const typeCode = (codeContent: string) => {
     return new Promise((resolve) => {
@@ -197,7 +239,11 @@ const scrollToBottom = () => {
     }
 };
 
-const processAudio = async (res: any) => {
+const processAudio = async (res: any) => {  
+    if (currentAudioSource) {
+        currentAudioSource.stop(); // Stop the previous audio source
+    }
+
     // If there is code, simulate typing it
     let typeCodePromise = null
     if (res.code !== "") {
@@ -221,11 +267,11 @@ const processAudio = async (res: any) => {
 
     // Decode the ArrayBuffer into audio data
     audioContext.decodeAudioData(audioBuffer, (decodedBuffer) => {
-        const source = audioContext.createBufferSource();
-        source.buffer = decodedBuffer;
-        source.connect(audioContext.destination);
+        currentAudioSource = audioContext.createBufferSource();
+        currentAudioSource.buffer = decodedBuffer;
+        currentAudioSource.connect(audioContext.destination);
 
-        source.onended = async () => {
+        currentAudioSource.onended = async () => {
             // Audio has ended, add your logic here
             await typeCodePromise;
             // Set a 2-second delay before calling getNextInteraction
@@ -235,10 +281,20 @@ const processAudio = async (res: any) => {
 
         };
 
-        source.start();
+        currentAudioSource.start();
 
     });
-}
+};
+
+const togglePopup = () => {
+    showPopup.value = !showPopup.value
+    // Auto-hide popup after 3 seconds
+    // if (showPopup.value) {
+    //   setTimeout(() => {
+    //     showPopup.value = false
+    //   }, 3000)
+    // }
+};
 
 </script>
 
@@ -264,7 +320,7 @@ const processAudio = async (res: any) => {
     flex-direction: column;
     justify-content: space-between;
     max-width: 100%;
-    height: 80vh;
+    height: 75vh;
     z-index: 2;
     box-sizing: border-box;
     border-radius: 1rem;
@@ -364,19 +420,7 @@ const processAudio = async (res: any) => {
     padding: 0 0.5rem 0 1.5rem;
 }
 
-i {
-    font-size: 1.5rem;
-    margin-right: 1rem;
-    color: #666;
-    /* You can update the color as needed */
-    cursor: pointer;
-    transition: color 200ms;
-}
 
-i:hover {
-    color: #333;
-    /* You can update the color as needed */
-}
 
 input {
     border: none;
@@ -674,5 +718,49 @@ input::placeholder {
     -webkit-transform: translateY(-12px);
     -moz-transform: translateY(-12px);
     transform: translateY(-12px);
+}
+
+
+/* Container for the icon and popup message */
+.icon-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* Floating Icon */
+.floating-icon {
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+    padding: 10px;
+    cursor: pointer;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
+    margin-right: 10px;
+}
+
+.floating-icon i {
+    font-size: 24px;
+}
+
+.floating-icon:hover {
+    background-color: #0056b3;
+}
+
+/* Popup message to the right of the icon */
+.popup-message {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 10px 15px;
+    border-radius: 10px;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
+    font-size: 14px;
+    width: 400px;
+    transition: opacity 0.3s ease;
+    white-space: wrap;
+}
+
+.popup-message p {
+    margin: 0;
 }
 </style>
