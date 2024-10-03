@@ -1,41 +1,85 @@
 <template>
     <div class="row">
         <div class="col-6">
+            <div class="icon-container mt-3">
+                <!-- Floating Icon -->
+                <div class="floating-icon" @click="togglePopup">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div v-if="showPopup" class="popup-message">
+                    <p>{{ popupMessage }}</p>
+                </div>
+            </div>
             <div class="chat mt-3">
                 <div class="contact">
                     <div class="name">Learn from example</div>
                 </div>
                 <div id="chat-messages" class="messages" ref="messages">
-                    <div v-for="(message, index) in chatMessages" :key="index">
-                        <div :class="message.role === 'interviewee' ? 'message interviewee' : 'message interviewer'" :data-text="message.explanation"  class="tooltip-box">
+                    <div v-for="(message, index) in currChatMessages" :key="index">
+                        <div :class="[
+                    'message',
+                    message.role === 'interviewee' ? 'interviewee' : 'interviewer',
+                    message.explanation !== '' ? 'tooltip-top' : ''
+                ]" v-if="message.explanation !== ''" :data-tooltip="message.explanation">
+                            <span>{{ message.content }}</span>
+                        </div>
+                        <!-- If no explanation, render without tooltip -->
+                        <div :class="['message', message.role === 'interviewee' ? 'interviewee' : 'interviewer']"
+                            v-else>
                             <span>{{ message.content }}</span>
                         </div>
                     </div>
                 </div>
                 <div class="input">
-                    <button @click="generateExample" class="btn btn-primary">Generate Example</button>
+                    <button v-if="isPaused" @click="continueInteraction" class="btn btn-primary" style="">Continue</button>
+                    <div v-else>
+                         <!-- <button @click="generateExample" class="btn btn-primary">Generate Example</button> -->
+                        <button @click="pauseInteraction" class="btn btn-outline-primary" style="">Pause</button>
+                        <button @click="getNextInteraction" class="btn btn-primary" style="margin-left: 20px;">Next</button>
+                    </div>
+                   
+
                 </div>
             </div>
 
         </div>
-        <div class="problemBox mt-3 col-6">
-            <div class="contact">
-                <h6>Problem Description</h6>
-            </div>
-            <div class="problemStatement" ref="problemBox">
-                <div class="container mt-2">
-                    <span v-html="problemStatement"></span>
+        <div class="col-6">
+            <div class="problemBox mt-3">
+                <div class="contact">
+                    <h6>Problem Description</h6>
+                </div>
+                <div class="problemStatement" ref="problemBox">
+                    <div class="container mt-2">
+                        <span v-html="problemStatement"></span>
+                    </div>
                 </div>
             </div>
+            <div class="mt-3">
+                <Codemirror placeholder="" :style="{ height: '35vh' }" :autofocus="true" :indent-with-tab="true"
+                    style="max-width:40rem; font-size: smaller;" :value="code" :tab-size="2" :extensions="extensions"
+                    v-model="code" />
+            </div>
+
+
         </div>
+
+
     </div>
 
 </template>
 
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue';
+<script setup lang="ts">
+import { defineComponent, ref, nextTick, onMounted } from 'vue';
 import axios from 'axios';
+import { Codemirror } from 'vue-codemirror'
+import { javascript } from '@codemirror/lang-javascript'
+import { python } from '@codemirror/lang-python'
+import { java } from '@codemirror/lang-java'
+import { cpp } from '@codemirror/lang-cpp'
+import { oneDark } from '@codemirror/theme-one-dark'
+import { EditorState } from "@codemirror/state"
+import { EditorView } from "@codemirror/view"
 
 
 interface Metadata {
@@ -46,6 +90,8 @@ interface ChatMessage {
     content: string;
     role: 'interviewee' | 'interviewer';
     explanation: string;
+    code: string;
+    audio_base64: string;
 }
 
 interface ChatMessageBackend {
@@ -61,56 +107,197 @@ type ReferenceDocs = {
 };
 
 
+const code = ref("")
+const selectedLanguage = ref('python')
+const extensions = ref([python(), oneDark, EditorView.editable.of(false)])
 
-export default defineComponent({
-    components: {
-    },
-    data() {
-        return {
-            chatMessages: [] as ChatMessage[], // Define the type for chatMessages
-            backendURL: '/api',
-            problemStatement: `<b>Intersection of Two Arrays</b>
-                                <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
-                                <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
+const currentIdxChat = ref(0)
 
-                                <b>Example 1:</b>
-                                <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
+const allChatMessages = ref<ChatMessage[]>([]);  // Using ref for reactivity
+const currChatMessages = ref<ChatMessage[]>([]);  // Using ref for reactivity
 
-                                <b>Example 2:</b>
-                                <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>
-                                <p>Note: [9,4] is also accepted.</p>`,
-        };
-    },
-    methods: {
-        async generateExample(){
-            const requestBody = {
-                messages: "",
-            };
+const messages = ref<HTMLDivElement | null>(null);// Create a ref for the chat-messages div
 
-            try {
-                const response = await axios.post(`${this.backendURL}/generateSimulation`, requestBody);
-                this.chatMessages.pop();
-                if (response.status === 200) {
-                    // Update the feedback field with the response from GPT-4
-                    this.chatMessages = response.data
-                
-                } else {
-                    // Handle API response error
-                    console.error('Failed to get chat from GPT:', response.status, response.data);
-                }
-            } catch (error) {
-                // Handle network or other errors
-                console.error('Error while chatting with GPT:', error);
-            }
-        },
+const showPopup = ref(true) // Control popup visibility
+const popupMessage = ref("Ready to learn? Click the start button to see the example think-aloud process")
 
-    },
+const isPaused = ref(false)
 
-    watch: {
+let currentAudioSource: AudioBufferSourceNode;
 
-    },
+
+const backendURL = '/api';
+const problemStatement = `<b>Intersection of Two Arrays</b>
+                          <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
+                          <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
+
+                          <b>Example 1:</b>
+                          <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
+
+                          <b>Example 2:</b>
+                          <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>
+                          <p>Note: [9,4] is also accepted.</p>`;
+
+const generateExample = async () => {
+    const requestBody = {
+        messages: '',
+    };
+
+    try {
+        const response = await axios.post(`${backendURL}/generateSimulation`, requestBody);
+        allChatMessages.value.pop();
+        if (response.status === 200) {
+            // Update the feedback field with the response from GPT-4
+            allChatMessages.value = response.data;
+        } else {
+            console.error('Failed to get chat from GPT:', response.status, response.data);
+        }
+    } catch (error) {
+        console.error('Error while chatting with GPT:', error);
+    }
+};
+
+onMounted(async () => {
+    await generateExample(); // Wait for the example to be generated
 });
+
+const getNextInteraction = async () => {
+    if (isPaused.value){
+        return;
+    }
+
+    const nextMessage = allChatMessages.value[currentIdxChat.value];
+    if (nextMessage) {
+        currChatMessages.value.push({
+            content: nextMessage.content,
+            role: nextMessage.role,
+            explanation: nextMessage.explanation,
+            code: nextMessage.code,
+            audio_base64: "",
+        });
+
+        if (nextMessage.explanation == "" || nextMessage.role == 'interviewer'){
+            showPopup.value = false;
+        } else {
+            showPopup.value = true;
+            popupMessage.value = nextMessage.explanation;
+        }
+
+        scrollToBottom();
+
+        processAudio(nextMessage);
+        currentIdxChat.value++;
+    }
+};
+
+
+const pauseInteraction = async () => {
+    if (currentAudioSource) {
+        currentAudioSource.stop(); // Stop the previous audio source
+    }
+
+    isPaused.value= true;
+}
+
+const continueInteraction = async () => {
+    isPaused.value= false;
+    getNextInteraction();
+}
+
+const typeCode = (codeContent: string) => {
+    return new Promise((resolve) => {
+        const typingSpeed = 150; // Typing speed in milliseconds
+        const lines = codeContent.split("\n"); // Split code into lines
+        let currentLine = 0;
+        let currentChar = 0;
+
+        const typeInterval = setInterval(() => {
+            if (currentLine < lines.length) {
+                if (currentChar < lines[currentLine].length) {
+                    code.value += lines[currentLine].charAt(currentChar);
+                    currentChar++;
+                } else {
+                    code.value += "\n"; // Move to the next line
+                    currentLine++;
+                    currentChar = 0; // Reset char index for the new line
+                }
+            } else {
+                clearInterval(typeInterval);
+                resolve(null); // Resolve the promise when done
+            }
+        }, typingSpeed);
+    });
+};
+
+// Function to scroll to the bottom of the chat messages container
+const scrollToBottom = () => {
+    if (messages.value) {
+        nextTick(() => {
+            if (messages.value)
+                messages.value.scrollTop = messages.value.scrollHeight;
+        });
+    }
+};
+
+const processAudio = async (res: any) => {  
+    if (currentAudioSource) {
+        currentAudioSource.stop(); // Stop the previous audio source
+    }
+
+    // If there is code, simulate typing it
+    let typeCodePromise = null
+    if (res.code !== "") {
+        typeCodePromise = typeCode(res.code);
+    }
+
+    const ttsResponseData = res['audio_base64'];
+
+    const audioContext = new AudioContext();
+
+    const audioData = atob(ttsResponseData);
+
+    // Convert the audio data to an ArrayBuffer
+    const audioBuffer = new ArrayBuffer(audioData.length);
+    const audioView = new Uint8Array(audioBuffer);
+    for (let i = 0; i < audioData.length; i++) {
+        audioView[i] = audioData.charCodeAt(i);
+    }
+
+    const audioBlob = new Blob([audioView], { type: 'audio/mp3' });
+
+    // Decode the ArrayBuffer into audio data
+    audioContext.decodeAudioData(audioBuffer, (decodedBuffer) => {
+        currentAudioSource = audioContext.createBufferSource();
+        currentAudioSource.buffer = decodedBuffer;
+        currentAudioSource.connect(audioContext.destination);
+
+        currentAudioSource.onended = async () => {
+            // Audio has ended, add your logic here
+            await typeCodePromise;
+            // Set a 2-second delay before calling getNextInteraction
+            setTimeout(() => {
+                getNextInteraction();
+            }, 2000);  // 2000 ms = 2 seconds
+
+        };
+
+        currentAudioSource.start();
+
+    });
+};
+
+const togglePopup = () => {
+    showPopup.value = !showPopup.value
+    // Auto-hide popup after 3 seconds
+    // if (showPopup.value) {
+    //   setTimeout(() => {
+    //     showPopup.value = false
+    //   }, 3000)
+    // }
+};
+
 </script>
+
 
 <style scoped>
 .contact {
@@ -149,7 +336,7 @@ export default defineComponent({
     flex-shrink: 10;
     overflow-x: visible;
     overflow-y: scroll;
-    position: relative; 
+    position: relative;
     height: 50rem;
     box-shadow:
         inset 0 2rem 2rem -2rem rgba(0, 0, 0, 0.05),
@@ -233,19 +420,7 @@ export default defineComponent({
     padding: 0 0.5rem 0 1.5rem;
 }
 
-i {
-    font-size: 1.5rem;
-    margin-right: 1rem;
-    color: #666;
-    /* You can update the color as needed */
-    cursor: pointer;
-    transition: color 200ms;
-}
 
-i:hover {
-    color: #333;
-    /* You can update the color as needed */
-}
 
 input {
     border: none;
@@ -419,5 +594,173 @@ input::placeholder {
     border-radius: 1rem;
     background: white;
     box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);
+}
+
+
+/**
+ * Tooltip Styles
+ */
+
+/* Base styles for the element that has a tooltip */
+[data-tooltip],
+.tooltip {
+    position: relative;
+    cursor: pointer;
+}
+
+/* Base styles for the entire tooltip */
+[data-tooltip]:before,
+[data-tooltip]:after,
+.tooltip:before,
+.tooltip:after {
+    position: absolute;
+    visibility: hidden;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
+    filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=0);
+    opacity: 0;
+    -webkit-transition:
+        opacity 0.2s ease-in-out,
+        visibility 0.2s ease-in-out,
+        -webkit-transform 0.2s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+    -moz-transition:
+        opacity 0.2s ease-in-out,
+        visibility 0.2s ease-in-out,
+        -moz-transform 0.2s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+    transition:
+        opacity 0.2s ease-in-out,
+        visibility 0.2s ease-in-out,
+        transform 0.2s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    pointer-events: none;
+}
+
+/* Show the entire tooltip on hover and focus */
+[data-tooltip]:hover:before,
+[data-tooltip]:hover:after,
+[data-tooltip]:focus:before,
+[data-tooltip]:focus:after,
+.tooltip:hover:before,
+.tooltip:hover:after,
+.tooltip:focus:before,
+.tooltip:focus:after {
+    visibility: visible;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+    filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=100);
+    opacity: 1;
+}
+
+/* Base styles for the tooltip's directional arrow */
+.tooltip:before,
+[data-tooltip]:before {
+    z-index: 1001;
+    border: 6px solid transparent;
+    background: transparent;
+    content: "";
+}
+
+/* Base styles for the tooltip's content area */
+.tooltip:after,
+[data-tooltip]:after {
+    z-index: 1000;
+    padding: 8px;
+    width: 160px;
+    background-color: #000;
+    background-color: hsla(0, 0%, 20%, 0.9);
+    color: #fff;
+    content: attr(data-tooltip);
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+/* Directions */
+
+/* Top (default) */
+[data-tooltip]:before,
+[data-tooltip]:after,
+.tooltip:before,
+.tooltip:after,
+.tooltip-top:before,
+.tooltip-top:after {
+    bottom: 100%;
+    left: 50%;
+}
+
+[data-tooltip]:before,
+.tooltip:before,
+.tooltip-top:before {
+    margin-left: -6px;
+    margin-bottom: -12px;
+    border-top-color: #000;
+    border-top-color: hsla(0, 0%, 20%, 0.9);
+}
+
+/* Horizontally align top/bottom tooltips */
+[data-tooltip]:after,
+.tooltip:after,
+.tooltip-top:after {
+    margin-left: -80px;
+}
+
+[data-tooltip]:hover:before,
+[data-tooltip]:hover:after,
+[data-tooltip]:focus:before,
+[data-tooltip]:focus:after,
+.tooltip:hover:before,
+.tooltip:hover:after,
+.tooltip:focus:before,
+.tooltip:focus:after,
+.tooltip-top:hover:before,
+.tooltip-top:hover:after,
+.tooltip-top:focus:before,
+.tooltip-top:focus:after {
+    -webkit-transform: translateY(-12px);
+    -moz-transform: translateY(-12px);
+    transform: translateY(-12px);
+}
+
+
+/* Container for the icon and popup message */
+.icon-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* Floating Icon */
+.floating-icon {
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+    padding: 10px;
+    cursor: pointer;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
+    margin-right: 10px;
+}
+
+.floating-icon i {
+    font-size: 24px;
+}
+
+.floating-icon:hover {
+    background-color: #0056b3;
+}
+
+/* Popup message to the right of the icon */
+.popup-message {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 10px 15px;
+    border-radius: 10px;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
+    font-size: 14px;
+    width: 400px;
+    transition: opacity 0.3s ease;
+    white-space: wrap;
+}
+
+.popup-message p {
+    margin: 0;
 }
 </style>

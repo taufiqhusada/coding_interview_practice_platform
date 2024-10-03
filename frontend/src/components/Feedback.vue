@@ -3,42 +3,60 @@
     <div class="row">
       <div class="col-sm-4">
 
-      <section ref="chatArea" class="transcript">
-        <h4 class="headline">Transcript</h4>
-        <div v-for="(message, index) in transcript" :key="index"
-          :class="[{ 'margin-right': message.role === 'interviewer', 'margin-left': message.role === 'interviewee' }]">
-          <div class="message-container">
-            <div class="content">
-              <span :class="[{ 'speaker-1': message.role === 'interviewee', 'speaker-2': message.role === 'interviewer' }]">
-                <b>{{ message.role }}:</b>
-              </span>
-              {{ message.content }}
+        <section ref="chatArea" class="transcript">
+          <h4 class="headline">Transcript</h4>
+          <div v-for="(message, index) in transcript" :key="index"
+            :class="[{ 'margin-right': message.role === 'interviewer', 'margin-left': message.role === 'interviewee' }]">
+            <div class="message-container">
+              <div class="content">
+                <span
+                  :class="[{ 'speaker-1': message.role === 'interviewee', 'speaker-2': message.role === 'interviewer' }]">
+                  <b>{{ message.role }}:</b>
+                </span>
+                {{ message.content }}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
       </div>
+
       <div class="col-sm-8">
         <section ref="chatArea" class="transcript">
           <h4 class="headline">Assessment of the Think-Aloud Process</h4>
+
           <div class="message-container">
             <div class="content">
-              <b>Feedback on clarification</b>: {{ feedbackContent?.clarification }}
+              <b>Feedback on Understanding</b>: {{ feedbackContent?.understanding }}
             </div>
           </div>
+
           <div class="message-container">
             <div class="content">
-              <b>Feedback on proposing ideas</b>: {{ feedbackContent?.ideation }}
+              <b>Feedback on Initial Ideation</b>: {{ feedbackContent?.initial_ideation }}
             </div>
           </div>
+
           <div class="message-container">
             <div class="content">
-              <b>Feedback on communication during coding</b>: {{ feedbackContent?.communication_during_coding }}
+              <b>Feedback on Idea Justification</b>: {{ feedbackContent?.idea_justification }}
             </div>
           </div>
+
           <div class="message-container">
             <div class="content">
-              <b>Feedback on code dry run</b>: {{ feedbackContent?.dry_run }}
+              <b>Feedback on Implementation</b>: {{ feedbackContent?.implementation }}
+            </div>
+          </div>
+
+          <div class="message-container">
+            <div class="content">
+              <b>Feedback on Review (Dry Run)</b>: {{ feedbackContent?.review_dry_run }}
+            </div>
+          </div>
+
+          <div class="message-container">
+            <div class="content">
+              <b>Feedback on Evaluation</b>: {{ feedbackContent?.evaluation }}
             </div>
           </div>
         </section>
@@ -63,17 +81,19 @@ interface ChatMessage {
 }
 
 interface FeedbackContent {
-  clarification: string;
-  ideation: string;
-  communication_during_coding: string;
-  dry_run: string;
+  understanding: string;
+  initial_ideation: string;
+  idea_justification: string;
+  implementation: string;
+  review_dry_run: string;
+  evaluation: string;
 }
 
 export default defineComponent({
   props: {
 
   },
-  components:{
+  components: {
     loader,
   },
   methods: {
@@ -100,14 +120,14 @@ export default defineComponent({
         transcript.value = response.data['transcript'];
 
         feedbackContent.value = JSON.parse(response.data['feedback']);
-    
+
       } catch (error) {
         console.error('Error fetching transcript:', error);
       }
     });
 
     return {
-      transcript, 
+      transcript,
       feedbackContent,
     };
   },
@@ -181,12 +201,18 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  border: 1px solid #ccc; /* Add border for the box */
-  background-color: #fefefe; /* Light background color for the box */
-  padding: 10px; /* Add padding inside the box */
-  border-radius: 8px; /* Rounded corners for the box */
-  margin-bottom: 10px; /* Add space between messages */
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+  border: 1px solid #ccc;
+  /* Add border for the box */
+  background-color: #fefefe;
+  /* Light background color for the box */
+  padding: 10px;
+  /* Add padding inside the box */
+  border-radius: 8px;
+  /* Rounded corners for the box */
+  margin-bottom: 10px;
+  /* Add space between messages */
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  /* Add a subtle shadow */
 }
 
 .content {
@@ -194,19 +220,22 @@ export default defineComponent({
 }
 
 .speaker-1 {
-  color: #368a02; /* Text color for Speaker 1 */
+  color: #368a02;
+  /* Text color for Speaker 1 */
 }
 
 .speaker-2 {
-  color: #0d6efd; /* Text color for Speaker 2 */
+  color: #0d6efd;
+  /* Text color for Speaker 2 */
 }
 
 .margin-right {
-  margin-right: 25px; /* Adjust margin as needed */
+  margin-right: 25px;
+  /* Adjust margin as needed */
 }
 
 .margin-left {
-  margin-left: 25px; /* Adjust margin as needed */
+  margin-left: 25px;
+  /* Adjust margin as needed */
 }
-
 </style>

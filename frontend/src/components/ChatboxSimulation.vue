@@ -9,10 +9,46 @@
             </div>
         </div>
     </div>
-    <div class="chat mt-3">
-        <div class="contact">
-            <div class="name">Live Conversation</div>
+
+    <div class="d-flex align-items-center mt-3">
+        <button v-if="!isRecording && !isSendingMessage" @click="startRecording" class="btn btn-primary"
+            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
+            Start Session
+        </button>
+        <button v-if="isRecording" @click="stopRecording" class="btn btn-outline-danger"
+            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
+            Stop Session
+        </button>
+
+        <button v-if="isRecording" @click="toggleTranscript" class="btn btn-outline-primary"
+            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
+            {{ isTranscriptVisible ? 'Hide Transcript' : 'Show Transcript' }}
+        </button>
+
+        <button v-if="isRecording && !isSendingMessage" @click="getResponseFromGPT" class="btn btn-outline-primary"
+            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
+            Get Response
+        </button>
+
+        <div v-if="isSendingMessage">
+            <loaderSimple style="margin-left: 20px; margin-right: 40px"></loaderSimple>
         </div>
+
+        <div class="form-group mb-0" style="flex-grow: 1;"> <!-- Use flex-grow for better responsiveness -->
+            <select id="interactionMode" class="form-select" style="padding: 0.375rem 0.75rem; min-width: 150px;" @change="changeInteractionMode" v-model="selectedInteractionMode">
+                <option value="manualReply">Manual Reply</option>
+                <option value="autoReplay">Auto Reply</option>
+            </select>
+        </div>
+    </div>
+
+
+    <div v-if="isTranscriptVisible && isRecording" class="chat mt-3">
+        <div class="contact">
+            <div class="name">Live Transcript</div>
+        </div>
+
+        <!-- Conditionally render the transcript -->
         <div id="chat-messages" class="messages" ref="messages">
             <div v-for="(message, index) in chatMessages" :key="index">
                 <div :class="message.role === 'interviewee' ? 'message interviewee' : 'message interviewer'">
@@ -24,30 +60,24 @@
                     <div v-else>
                         <span v-html="message.content"></span>
                     </div>
-
                 </div>
             </div>
         </div>
+
+        <!-- Other existing content (e.g., recording button) -->
         <div class="d-flex flex-row m-2">
-            <div class="form-group" style="width: 100%;">
+            <!-- <div class="form-group" style="width: 100%;">
                 <select id="languageSelect" class="form-select">
                     <option value="active">Active</option>
                     <option value="passive">Passive</option>
                     <option value="random">Random</option>
-                    <!-- Add more languages as needed -->
                 </select>
-            </div>
+            </div> -->
             <div class="input" style="width: 200px;">
-                <button v-if="!isRecording" @click="startRecording" class="btn btn-primary" style="width: 200px;">Start
-                    Session</button>
-                <button v-else @click="stopRecording" class="btn btn-outline-danger" style="width: 200px;">Stop
-                    Session</button>
+
             </div>
-
         </div>
-
     </div>
-
 </template>
 
 
@@ -58,6 +88,8 @@ import io, { Socket } from 'socket.io-client';
 import { throws } from 'assert';
 import Cookies from 'js-cookie';
 import router from '@/router';
+import loaderSimple from './misc/loader_simple.vue';
+
 
 
 interface Metadata {
@@ -76,6 +108,13 @@ interface ChatMessageBackend {
 }
 
 
+const PracticeState = {
+  NotStarted: -1,
+  Practicing: 0,
+  FeedbackReceived: 1
+}
+
+
 export default defineComponent({
     props: {
         code: {
@@ -84,6 +123,7 @@ export default defineComponent({
         }
     },
     components: {
+        loaderSimple,
     },
     data() {
         return {
@@ -100,13 +140,31 @@ export default defineComponent({
                                 <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
 
                                 <b>Example 2:</b>
-                                <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>
-                                <p>Note: [9,4] is also accepted.</p>`,
+                                <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>`,
             silenceTimer: undefined as ReturnType<typeof setTimeout> | undefined,
             isSendingMessage: false,
+            isTranscriptVisible: true,
+            isManualModeReply: true,
+            selectedInteractionMode: "manualReply",
+            interimTranscript: '',
+            currentTranscript: '',
         };
     },
+
     methods: {
+        toggleTranscript() {
+            this.isTranscriptVisible = !this.isTranscriptVisible;
+        },
+        // Define the keydown handler
+        handleKeydown(event: KeyboardEvent) {
+            // Check if Ctrl+Space (Windows/Linux) or Cmd+Space (Mac) is pressed
+            if (this.isManualModeReply && !this.isSendingMessage && (event.ctrlKey || event.metaKey) && event.code === 'KeyM') {
+                console.log("button pressed")
+                event.preventDefault(); // Prevent the default browser behavior
+                this.getResponseFromGPT(); // Call the method
+            }
+        },
+
         startRecording() {
             this.isRecording = true;
 
@@ -140,12 +198,23 @@ export default defineComponent({
                 }
                 console.log('Socket.IO disconnected.');
             });
+
+            console.log('try to emit')
+
+            // emit to parent
+            this.$emit('update:PracticeState', PracticeState.Practicing); 
         },
 
         processResponse(res: any) {
 
             const ttsResponseData = res['audio_data'];
             const gptResponseText = res['text_response'];
+            const phase = res['phase']
+
+            this.$emit('update:Phase', phase); 
+
+            
+            console.log(phase)
 
             this.recognition?.stop(); // I don't know if this is necessary
 
@@ -172,6 +241,7 @@ export default defineComponent({
                     this.isSendingMessage = false;
                     // Audio has ended, add your logic here
                     this.recognition?.start();
+                    this.currentTranscript = '';
 
                 };
 
@@ -189,8 +259,8 @@ export default defineComponent({
             this.recognition.continuous = true;
             this.recognition.interimResults = true;
 
-            let currentTranscript = '';
-
+            this.currentTranscript = '';
+            
             this.recognition.onstart = () => {
                 console.log('Speech recognition is on. Speak into the microphone.');
             };
@@ -200,38 +270,48 @@ export default defineComponent({
                 if (this.silenceTimer) {
                     clearTimeout(this.silenceTimer);
                 }
-
-                let interimTranscript = '';
+                
+                
+                this.interimTranscript = '';
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
-                        currentTranscript += event.results[i][0].transcript;
+                        this.currentTranscript += event.results[i][0].transcript;
                     } else {
-                        interimTranscript += event.results[i][0].transcript;
+                        this.interimTranscript += event.results[i][0].transcript;
                     }
                 }
 
-                // Set a new silence timer
-                this.silenceTimer = setTimeout(() => {
-                    if (this.ws && currentTranscript.trim() !== '') {
-                        // Add or update the user's message
-                        if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
-                            this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: currentTranscript + interimTranscript };
-                        } else {
-                            return
-                        }
-                        this.scrollToBottom();
+                if (this.isManualModeReply) { // manual mode reply
+                    // Add or update the user's message
+                    
 
-                        this.isSendingMessage = true;
-                        this.recognition?.stop();
-                        
-                        this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
-                        
-                        console.log("Silence detected, sending message");
-                        this.ws.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
-                        this.scrollToBottom();
-                        currentTranscript = '';
-                    }
-                }, 2000);
+
+                } else {
+                    console.log('auto')
+                    // Set a new silence timer
+                    this.silenceTimer = setTimeout(() => {
+                        if (this.ws && this.currentTranscript.trim() !== '') {
+                            // Add or update the user's message
+                            if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
+                                this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: this.currentTranscript + this.interimTranscript };
+                            } else {
+                                return
+                            }
+                            this.scrollToBottom();
+
+                            this.isSendingMessage = true;
+                            this.recognition?.stop();
+
+                            this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+
+                            console.log("Silence detected, sending message");
+                            this.ws.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
+                            this.scrollToBottom();
+                            this.currentTranscript = '';
+                        }
+                    }, 2000);
+                }
+
             };
 
             this.recognition.onerror = (event) => {
@@ -240,8 +320,10 @@ export default defineComponent({
 
             this.recognition.onspeechstart = (e) => {
                 console.log("restarted")
-                clearTimeout(this.silenceTimer); 
-                this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
+                clearTimeout(this.silenceTimer);
+                if (this.chatMessages.length > 0 && (this.chatMessages[this.chatMessages.length - 1].role != "interviewee" || !this.chatMessages[this.chatMessages.length - 1].isTyping)){
+                    this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
+                }   
                 this.scrollToBottom();
             }
 
@@ -270,14 +352,14 @@ export default defineComponent({
                 if (response.status === 200) {
                     // Update the feedback field with the response from GPT-4
                     console.log(response.data)
-                    
+
                     const sessionId = response.data["session_id"];
                     const feedback = response.data["feedback"]
-                    
+
                     console.log(sessionId)
                     console.log(feedback)
 
-                    Cookies.set('sessionID', sessionId,  { expires: 120 / (24 * 60) });
+                    Cookies.set('sessionID', sessionId, { expires: 120 / (24 * 60) });
                     router.push('/feedback');
 
                 } else {
@@ -314,6 +396,57 @@ export default defineComponent({
                 });
             }
         },
+
+        getResponseFromGPT() {
+            if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
+                this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: this.currentTranscript + this.interimTranscript };
+            } 
+            this.scrollToBottom();
+            this.currentTranscript = '';
+
+            this.isSendingMessage = true;
+            this.recognition?.stop();
+
+            this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
+
+            console.log("Silence detected, sending message");
+            this.ws?.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
+            this.scrollToBottom();
+        },
+
+        changeInteractionMode() {
+            if (this.selectedInteractionMode == "manualReply") {
+                this.isManualModeReply = true;
+            } else {
+                this.isManualModeReply = false;
+            }
+            console.log(this.isManualModeReply)
+        },
+
+        getTranscriptSession(): ChatMessage[] {
+            return this.chatMessages;
+        },
+
+        clearTranscriptSession(idxInterviewerStart: number){
+            this.chatMessages = this.chatMessages.slice(0, Math.min(idxInterviewerStart,this.chatMessages.length));
+            if (this.chatMessages.length > 0 && (this.chatMessages[this.chatMessages.length - 1].role != "interviewee" || !this.chatMessages[this.chatMessages.length - 1].isTyping)){
+                 this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
+            }
+
+            // TODO: bug when reset
+            this.interimTranscript = '';
+            this.currentTranscript = '';
+        }
+    },
+
+    mounted() {
+        console.log("mounted")
+        // Bind the event on component mount
+        window.addEventListener('keydown', (event) => this.handleKeydown(event));
+    },
+    beforeUnmount() {
+        // Unbind the event on component unmount
+        window.removeEventListener('keydown', this.handleKeydown);
     },
 
     watch: {

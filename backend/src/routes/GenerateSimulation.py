@@ -4,13 +4,15 @@ from util.response import  convert_to_json_resp
 from config.openai_connector import init_openai_config
 import os
 import json
+import base64
 
 generateSimulationBP = Blueprint('generateSimulationBP', __name__)
 
 @generateSimulationBP.route('/generateSimulation', methods=['POST'])
 def generate_static_simulation():
-    with open('routes/static/example_1.json', 'r') as file:
+    with open('routes/static/example_4_with_audio.json', 'r') as file:
         data = json.load(file)
+        # data = generate_tts_from_generated_simulation(data)
     return data
 
 # TODO: use this
@@ -20,10 +22,11 @@ def generate_simulation():
 
     prompt = f"""
                 Simulate a realistic coding interview between an interviewer and an interviewee focused on solving the given Problem. 
-                The simulation should include explanations of best practices based on the example provided. 
+                The simulation should include explanations of best practices based on the example provided. When you write the code put it on "lines of code" and write and explain it step by step.
+                Do not use built-in library if possible
 
                 Format your answer into a json format:
-                [{{"role(interviewer/ interviewee)": "", "content": "", "explanation (when the role is interviewee, explain the importance or rationale of answering in a such way)": ""}}, ...]]
+                [{{"role(interviewer/ interviewee)": "", "content": "", "code (containing STEP BY STEP CODE that the interviewee write while think aloud)": "","explanation (when the role is interviewee, explain the importance or rationale of answering in a such way)": ""}}, ...]]
 
                 The interviewer should ask probing questions to understand the interviewee's thought process, while the interviewee should clearly explain their approach, consider edge cases, and write code to solve the problem.
 
@@ -73,3 +76,29 @@ def generate_simulation():
 
     response = response.choices[0].message.content
     return response
+
+def generate_tts(text, role):
+    openai = init_openai_config()
+    # Send a request to the OpenAI TTS API to generate audio from text
+    tts_response = openai.audio.speech.create(
+        model="tts-1",
+        voice="alloy" if role == "interviewer" else "nova",
+        input=text,
+        response_format="opus"
+    )
+
+    return tts_response.content
+
+
+def generate_tts_from_generated_simulation(data):
+    for item in data:
+        audio = generate_tts(item['content'], item['role'])
+        audio_base64 = base64.b64encode(audio).decode('utf-8')
+        item['audio_base64'] = audio_base64
+
+        print(item['content'], audio_base64)
+       
+    return data
+
+ 
+

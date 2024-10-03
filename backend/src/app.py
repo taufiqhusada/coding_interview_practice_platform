@@ -65,7 +65,7 @@ def first_interaction():
         ]
 
     completion = client.chat.completions.create(
-        model='gpt-3.5-turbo',
+        model='gpt-4o-mini',
         messages=messages,
         temperature=0
     )
@@ -147,16 +147,21 @@ def call_open_api(input_data):
     messages=[
             {"role": "system", 
              "content": f"""
-                        You are an experienced technical interviewer conducting a coding interview. Your goal is to assess the candidate's problem-solving skills, coding ability, and communication. The coding problem is the following:
+                        You are an experienced technical interviewer conducting a coding interview. Your goal is to assess the candidate's problem-solving skills, coding ability, and communication. 
+                            Make sure your communication is short and concise.
+                        
+                            The coding problem is the following:
 
                             Problem:
                             ```{problem}```
 
-                            The candidate will implicitly follow these four steps:
-                            1. Ask Clarifying Questions: The candidate will ask some clarifying questions to ensure they fully understand the problem.
-                            2. Propose a Solution: Have the candidate outline their proposed solution, including the logic, data structures, and algorithms they plan to use.
-                            3. Code the Solution: As they code, the candidate will explain their thought process, detailing how their code addresses the problem step by step.
-                            4. Dry Run the Code: After coding, ask the candidate to simulate the execution of their code with a test case, explaining how each part of the code functions and what the expected output will be.
+                            The candidate will implicitly follow these six steps:
+                            1. Understanding: The candidate may ask clarifying questions to ensure they fully understand the problem and may propose an initial test case to demonstrate their understanding of the requirements.
+                            2. Initial Ideation: The candidate will brainstorm initial ideas on how to solve the problem.
+                            3. Idea Justification: The candidate will justify their approach, explaining why the chosen solution is suitable.
+                            4. Implementation: The candidate will code the solution while thinking aloud to describe their thought process.
+                            5. Review (Dry Run): After coding, the candidate will dry-run their code with a test case, walking through the logic step by step.
+                            6. Evaluation: The candidate will evaluate their solution, discussing possible optimizations, edge cases, and any necessary improvements.
 
                             Throughout the interview:
                             - Prompt the candidate to think aloud and explain their reasoning at each step.
@@ -169,6 +174,8 @@ def call_open_api(input_data):
 
                             Candidate's Current Code:
                             ```{code}```
+
+                            Make sure your communication is short and concise.
                         """},
         ]
 
@@ -178,11 +185,46 @@ def call_open_api(input_data):
 
     print(messages)
     completion = client.chat.completions.create(
-        model='gpt-3.5-turbo',
+        model='gpt-4o-mini',
         messages=messages
     )
 
-    return completion
+    return completion, chat_messages
+
+def get_phase_interview(chat_messages):
+    prompt = f"""Given the following interview transcript, classify which of the six steps the candidate is currently in based on the last part of the transcript. Consider both the interviewer's questions and the candidate's responses to determine the step:
+
+            Transcript: 
+            \"\"\"
+            {chat_messages}
+            \"\"\"
+
+
+            mathematica
+            Copy code
+            <Insert transcript here>
+            The candidate implicitly follows these six steps in a coding interview:
+
+            - Understanding: The candidate responds to clarifying questions or asks their own to confirm understanding of the problem. The interviewer might prompt them for clarification or deeper understanding.
+            - Initial Ideation: The candidate starts brainstorming solutions. The interviewer may encourage ideation or ask about possible approaches.
+            - Idea Justification: The candidate explains why a particular solution is suitable. The interviewer might ask the candidate to defend or elaborate on their reasoning.
+            - Implementation: The candidate begins coding while explaining their thought process. The interviewer might ask about specific lines of code or the rationale for implementation choices.
+            - Review (Dry Run): The candidate tests their code with sample input and walks through the logic step by step. The interviewer may ask them to explain how they are validating the code.
+            - Evaluation: The candidate evaluates the overall solution, discussing optimizations, edge cases, or improvements. The interviewer may prompt the candidate to think critically about their solution's performance or scalability.
+            Classify the current step as one of the above. Your output should only be the step name (e.g., "Understanding"), without including the number.
+
+            Classification: """
+    
+    res = client.chat.completions.create(
+        model='gpt-4o-mini',
+        messages=[{
+        "role": "system",
+        "content": prompt
+        }]
+    )
+    print(res)
+
+    return res.choices[0].message.content
 
 class ConnectionManager:
     def __init__(self):
@@ -221,18 +263,22 @@ def handle_message(data):
             message = first_interaction()
             audio = generate_tts(message)
             audio_base64 = base64.b64encode(audio).decode('utf-8')
-            data = {'audio_data': audio_base64,'text_response': message}
+            data = {'audio_data': audio_base64,'text_response': message, 'phase': 'Understanding'}
 
             manager.send_text(data, sid)
 
         else:
-
-            res = call_open_api(data)
+            res, transcript = call_open_api(data)
             message = res.choices[0].message.content
+
+            transcript.append({'content': message, "role": 'assistant'})
+
+            phase = get_phase_interview(transcript)
+
 
             audio = generate_tts(message)
             audio_base64 = base64.b64encode(audio).decode('utf-8')
-            data = {'audio_data': audio_base64,'text_response': message}
+            data = {'audio_data': audio_base64,'text_response': message, 'phase': phase}
 
             manager.send_text(data, sid)
 

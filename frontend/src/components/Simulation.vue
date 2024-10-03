@@ -43,7 +43,7 @@ export default defineComponent({
   setup() {
     const code = ref(``)
     const selectedLanguage = ref('python')
-    const extensions = ref([javascript(), oneDark])
+    const extensions = ref([python(), oneDark])
 
     // Codemirror EditorView instance ref
     const view = shallowRef()
