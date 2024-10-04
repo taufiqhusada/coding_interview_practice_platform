@@ -90,9 +90,7 @@ interface FeedbackContent {
 }
 
 export default defineComponent({
-  props: {
 
-  },
   components: {
     loader,
   },

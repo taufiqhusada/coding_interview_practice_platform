@@ -245,7 +245,7 @@ const processAudio = async (res: any) => {
     }
 
     // If there is code, simulate typing it
-    let typeCodePromise = null
+    let typeCodePromise: Promise<any> = Promise.resolve(); 
     if (res.code !== "") {
         typeCodePromise = typeCode(res.code);
     }
