@@ -226,67 +226,65 @@ def get_phase_interview(chat_messages):
 
     return res.choices[0].message.content
 
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections = []
+# class ConnectionManager:
+#     def __init__(self):
+#         self.active_connections = []
 
-    def connect(self, sid):
-        self.active_connections.append(sid)
+#     def connect(self, sid):
+#         self.active_connections.append(sid)
 
-    def disconnect(self, sid):
-        self.active_connections.remove(sid)
+#     def disconnect(self, sid):
+#         self.active_connections.remove(sid)
 
-    def send_text(self, text, sid):
-        send(text, room=sid)
+#     def send_text(self, text, sid):
+#         send(text, room=sid)
 
-manager = ConnectionManager()
+# manager = ConnectionManager()
 
-@socketio.on('connect', namespace='/ws')
-def handle_connect():
-    sid = request.sid
-    manager.connect(sid)
-    print(f"Client {sid} connected")
+# @socketio.on('connect', namespace='/ws')
+# def handle_connect():
+#     sid = request.sid
+#     manager.connect(sid)
+#     print(f"Client {sid} connected")
 
-@socketio.on('disconnect', namespace='/ws')
-def handle_disconnect():
-    sid = request.sid
-    manager.disconnect(sid)
-    print(f"Client {sid} disconnected")
+# @socketio.on('disconnect', namespace='/ws')
+# def handle_disconnect():
+#     sid = request.sid
+#     manager.disconnect(sid)
+#     print(f"Client {sid} disconnected")
 
-@socketio.on('message', namespace='/ws')
-def handle_message(data):
-    sid = request.sid
-    print(f"Received text: {data}")
-    
+
+@app.route('/message', methods=['POST'])
+def handle_message():
     try:
+        data = request.json
+        # sid = request.remote_addr  # or use any session/user identification mechanism
+        print(f"Received text: {data}")
+
         if data['is_first'] == True:
             message = first_interaction()
             audio = generate_tts(message)
             audio_base64 = base64.b64encode(audio).decode('utf-8')
-            data = {'audio_data': audio_base64,'text_response': message, 'phase': 'Understanding'}
-
-            manager.send_text(data, sid)
+            response_data = {'audio_data': audio_base64, 'text_response': message, 'phase': 'Understanding'}
 
         else:
             res, transcript = call_open_api(data)
             message = res.choices[0].message.content
-
             transcript.append({'content': message, "role": 'assistant'})
 
             phase = get_phase_interview(transcript)
 
-
             audio = generate_tts(message)
             audio_base64 = base64.b64encode(audio).decode('utf-8')
-            data = {'audio_data': audio_base64,'text_response': message, 'phase': phase}
+            response_data = {'audio_data': audio_base64, 'text_response': message, 'phase': phase}
 
-            manager.send_text(data, sid)
-
+        # Return the response as JSON
+        return response_data
 
     except Exception as e:
         print(f"Error: {str(e)}")
-        disconnect(sid)
-
+        return {'error': str(e)}
+    
 initialize_db(app)
 @app.route("/")
 def hello_world():

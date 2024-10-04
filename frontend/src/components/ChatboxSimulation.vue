@@ -131,7 +131,7 @@ export default defineComponent({
             backendURL: '/api',
             isRecording: false,
             recognition: null as SpeechRecognition | null,
-            ws: null as Socket | null,
+            // ws: null as Socket | null,
             problemStatement: `<b>Intersection of Two Arrays</b>
                                 <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
                                 <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
@@ -165,44 +165,37 @@ export default defineComponent({
             }
         },
 
-        startRecording() {
+        async startRecording() {
             this.isRecording = true;
 
-            // Initialize the Socket.IO connection
-            this.ws = io('http://127.0.0.1:5000/ws');
-            // When the connection is established
-            this.ws.on('connect', () => {
-                console.log("Connected to server");
-                this.isSendingMessage = true;
-                this.startRecognition();
-                this.recognition?.stop();
-                this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
-                this.ws?.send({ 'is_first': true });
-            });
+            // Indicate that message sending is in progress
+            this.isSendingMessage = true;
+            this.startRecognition();
+            this.recognition?.stop();
 
-            // Listen for messages from the server
-            this.ws.on('message', (data: any) => {
-                console.log(data);
-                this.processResponse(data);
-            });
+            // Show a loading message from the interviewer
+            this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
 
-            // Handle connection errors
-            this.ws.on('connect_error', (error: any) => {
-                console.error('Socket.IO connection error:', error);
-            });
+            try {
+                // Make an API request for the first interaction using axios
+                const response = await axios.post('api/message', {
+                    is_first: true
+                });
 
-            // Handle disconnection
-            this.ws.on('disconnect', () => {
-                if (this.recognition) {
-                    this.recognition.stop();
+                // Process the response if it's successful
+                if (response.status === 200) {
+                    const data = response.data;
+                    console.log(data);
+                    this.processResponse(data); // Process the server response
+                } else {
+                    console.error('API request failed with status:', response.statusText);
                 }
-                console.log('Socket.IO disconnected.');
-            });
+            } catch (error) {
+                console.error('Error in API request:', error);
+            }
 
-            console.log('try to emit')
-
-            // emit to parent
-            this.$emit('update:PracticeState', PracticeState.Practicing); 
+            // Update the practice state
+            this.$emit('update:PracticeState', PracticeState.Practicing);
         },
 
         processResponse(res: any) {
@@ -254,7 +247,7 @@ export default defineComponent({
             });
         },
 
-        startRecognition() {
+        async startRecognition() {
             this.recognition = new webkitSpeechRecognition();
             this.recognition.continuous = true;
             this.recognition.interimResults = true;
@@ -289,8 +282,8 @@ export default defineComponent({
                 } else {
                     console.log('auto')
                     // Set a new silence timer
-                    this.silenceTimer = setTimeout(() => {
-                        if (this.ws && this.currentTranscript.trim() !== '') {
+                    this.silenceTimer = setTimeout(async () =>  {
+                        if (this.currentTranscript.trim() !== '') {
                             // Add or update the user's message
                             if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
                                 this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: this.currentTranscript + this.interimTranscript };
@@ -305,7 +298,26 @@ export default defineComponent({
                             this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
 
                             console.log("Silence detected, sending message");
-                            this.ws.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
+                            
+                            try {
+                                // Make an API request using axios to send the user's message
+                                const response = await axios.post('api/message', {
+                                    messages: this.chatMessages,
+                                    code: this.code,
+                                    is_first: false
+                                });
+
+                                // Process the response from the server
+                                if (response.status === 200) {
+                                    const data = response.data;
+                                    this.processResponse(data); // Pass the server response to the processResponse function
+                                } else {
+                                    console.error('API request failed with status:', response.statusText);
+                                }
+                            } catch (error) {
+                                console.error('Error in API request:', error);
+                            }
+
                             this.scrollToBottom();
                             this.currentTranscript = '';
                         }
@@ -340,7 +352,6 @@ export default defineComponent({
             this.isSendingMessage = true; // just to set the flag
             this.recognition?.stop();
             this.isRecording = false;
-            this.ws?.disconnect();
 
             // save 
             try {
@@ -397,7 +408,7 @@ export default defineComponent({
             }
         },
 
-        getResponseFromGPT() {
+        async getResponseFromGPT() {
             if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
                 this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: this.currentTranscript + this.interimTranscript };
             } 
@@ -410,7 +421,25 @@ export default defineComponent({
             this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
 
             console.log("Silence detected, sending message");
-            this.ws?.send({ 'messages': this.chatMessages, 'code': this.code, 'is_first': false });
+            
+            try {
+                // Make an API request using axios to send the user's message
+                const response = await axios.post('api/message', {
+                    messages: this.chatMessages,
+                    code: this.code,
+                    is_first: false
+                });
+
+                // Process the response from the server
+                if (response.status === 200) {
+                    const data = response.data;
+                    this.processResponse(data); // Pass the server response to the processResponse function
+                } else {
+                    console.error('API request failed with status:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error in API request:', error);
+            }
             this.scrollToBottom();
         },
 
