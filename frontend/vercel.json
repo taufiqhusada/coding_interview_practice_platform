@@ -1,6 +1,6 @@
 {
     "rewrites": [
-        {"source": "/api/:path*", "destination": ""},
+        {"source": "/api/:path*", "destination": "https://tech-itv-be-00001-r8n-203526614377.us-east4.run.app/:path*"},
         {"source": "/(.*)", "destination": "/"}
     ]
 }
