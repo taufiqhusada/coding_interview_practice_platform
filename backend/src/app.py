@@ -183,7 +183,6 @@ def call_open_api(input_data):
 
     messages += chat_messages
 
-    print(messages)
     completion = client.chat.completions.create(
         model='gpt-4o-mini',
         messages=messages
@@ -222,7 +221,6 @@ def get_phase_interview(chat_messages):
         "content": prompt
         }]
     )
-    print(res)
 
     return res.choices[0].message.content
 

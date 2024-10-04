@@ -34,7 +34,6 @@ def save_transcript_and_feedback(transcript, feedback):
 def get_general_feedback():
     data = request.json
     transcript = data['transcript']
-    print(transcript)
 
 
     openai = init_openai_config()
@@ -76,7 +75,6 @@ def get_general_feedback():
         "role": "system",
         "content": prompt
         }]
-    print(messages)
 
     gpt_response = openai.chat.completions.create(
         model=os.getenv('OPENAI_GPT_MODEL'),
@@ -89,7 +87,6 @@ def get_general_feedback():
 
     session_id = save_transcript_and_feedback(transcript, feedback)
 
-    print(feedback)
 
     res = {'feedback': feedback, 'session_id': session_id}
     return res
@@ -122,7 +119,6 @@ def get_specific_feedback():
     transcript = data['transcript']
     phase = data['phase']
 
-    print(transcript)
 
     openai = init_openai_config()
 
@@ -162,7 +158,6 @@ def get_specific_feedback():
         "role": "system",
         "content": prompt
         }]
-    print(messages)
 
     gpt_response = openai.chat.completions.create(
         model=os.getenv('OPENAI_GPT_MODEL'),
@@ -172,7 +167,6 @@ def get_specific_feedback():
 
     feedback = gpt_response.choices[0].message.content
 
-    print(feedback)
 
     res = {'feedback': feedback}
     return res
