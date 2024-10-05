@@ -1,7 +1,16 @@
 <template>
-    <div class="problemBox mt-3">
-        <div class="contact">
+    <div class="problemBox mt-3 container">
+        <div class="d-flex justify-content-between align-items-center mt-2">
             <h6>Problem Description</h6>
+            <div class="problem-select">
+                <select class="form-select" style="min-width: 200px;" v-model="problemNumber">
+                    <!-- <option selected>Select Problem</option> -->
+                    <option value="0">Problem 1</option>
+                    <option value="1">Problem 2</option>
+                    <option value="2">Problem 3</option>
+                    <option value="3">Problem 4</option>
+                </select>
+            </div>
         </div>
         <div class="problemStatement" ref="problemBox">
             <div class="container mt-2">
@@ -35,7 +44,8 @@
         </div>
 
         <div class="form-group mb-0" style="flex-grow: 1;"> <!-- Use flex-grow for better responsiveness -->
-            <select id="interactionMode" class="form-select" style="padding: 0.375rem 0.75rem; min-width: 150px;" @change="changeInteractionMode" v-model="selectedInteractionMode">
+            <select id="interactionMode" class="form-select" style="padding: 0.375rem 0.75rem; min-width: 150px;"
+                @change="changeInteractionMode" v-model="selectedInteractionMode">
                 <option value="manualReply">Manual Reply</option>
                 <option value="autoReplay">Auto Reply</option>
             </select>
@@ -109,9 +119,9 @@ interface ChatMessageBackend {
 
 
 const PracticeState = {
-  NotStarted: -1,
-  Practicing: 0,
-  FeedbackReceived: 1
+    NotStarted: -1,
+    Practicing: 0,
+    FeedbackReceived: 1
 }
 
 
@@ -131,8 +141,10 @@ export default defineComponent({
             backendURL: '/api',
             isRecording: false,
             recognition: null as SpeechRecognition | null,
+            problemNumber: 0,
             // ws: null as Socket | null,
-            problemStatement: `<b>Intersection of Two Arrays</b>
+            problemList: [
+                `<b>Intersection of Two Arrays</b>
                                 <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
                                 <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
 
@@ -141,6 +153,12 @@ export default defineComponent({
 
                                 <b>Example 2:</b>
                                 <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>`,
+                'problem 2',
+                'problem 3',
+                'problem 4'
+
+            ],
+            problemStatement: '',
             silenceTimer: undefined as ReturnType<typeof setTimeout> | undefined,
             isSendingMessage: false,
             isTranscriptVisible: true,
@@ -204,9 +222,9 @@ export default defineComponent({
             const gptResponseText = res['text_response'];
             const phase = res['phase']
 
-            this.$emit('update:Phase', phase); 
+            this.$emit('update:Phase', phase);
 
-            
+
             console.log(phase)
 
             this.recognition?.stop(); // I don't know if this is necessary
@@ -253,7 +271,7 @@ export default defineComponent({
             this.recognition.interimResults = true;
 
             this.currentTranscript = '';
-            
+
             this.recognition.onstart = () => {
                 console.log('Speech recognition is on. Speak into the microphone.');
             };
@@ -263,8 +281,8 @@ export default defineComponent({
                 if (this.silenceTimer) {
                     clearTimeout(this.silenceTimer);
                 }
-                
-                
+
+
                 this.interimTranscript = '';
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
@@ -276,13 +294,13 @@ export default defineComponent({
 
                 if (this.isManualModeReply) { // manual mode reply
                     // Add or update the user's message
-                    
+
 
 
                 } else {
                     console.log('auto')
                     // Set a new silence timer
-                    this.silenceTimer = setTimeout(async () =>  {
+                    this.silenceTimer = setTimeout(async () => {
                         if (this.currentTranscript.trim() !== '') {
                             // Add or update the user's message
                             if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
@@ -298,7 +316,7 @@ export default defineComponent({
                             this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
 
                             console.log("Silence detected, sending message");
-                            
+
                             try {
                                 // Make an API request using axios to send the user's message
                                 const response = await axios.post('api/message', {
@@ -333,9 +351,9 @@ export default defineComponent({
             this.recognition.onspeechstart = (e) => {
                 console.log("restarted")
                 clearTimeout(this.silenceTimer);
-                if (this.chatMessages.length > 0 && (this.chatMessages[this.chatMessages.length - 1].role != "interviewee" || !this.chatMessages[this.chatMessages.length - 1].isTyping)){
+                if (this.chatMessages.length > 0 && (this.chatMessages[this.chatMessages.length - 1].role != "interviewee" || !this.chatMessages[this.chatMessages.length - 1].isTyping)) {
                     this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
-                }   
+                }
                 this.scrollToBottom();
             }
 
@@ -411,7 +429,7 @@ export default defineComponent({
         async getResponseFromGPT() {
             if (this.chatMessages.length > 0 && this.chatMessages[this.chatMessages.length - 1].role === "interviewee") {
                 this.chatMessages[this.chatMessages.length - 1] = { role: "interviewee", content: this.currentTranscript + this.interimTranscript };
-            } 
+            }
             this.scrollToBottom();
             this.currentTranscript = '';
 
@@ -421,7 +439,7 @@ export default defineComponent({
             this.chatMessages.push({ role: "interviewer", content: "loading", isTyping: true });
 
             console.log("Silence detected, sending message");
-            
+
             try {
                 // Make an API request using axios to send the user's message
                 const response = await axios.post('api/message', {
@@ -456,10 +474,10 @@ export default defineComponent({
             return this.chatMessages;
         },
 
-        clearTranscriptSession(idxInterviewerStart: number){
-            this.chatMessages = this.chatMessages.slice(0, Math.min(idxInterviewerStart,this.chatMessages.length));
-            if (this.chatMessages.length > 0 && (this.chatMessages[this.chatMessages.length - 1].role != "interviewee" || !this.chatMessages[this.chatMessages.length - 1].isTyping)){
-                 this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
+        clearTranscriptSession(idxInterviewerStart: number) {
+            this.chatMessages = this.chatMessages.slice(0, Math.min(idxInterviewerStart, this.chatMessages.length));
+            if (this.chatMessages.length > 0 && (this.chatMessages[this.chatMessages.length - 1].role != "interviewee" || !this.chatMessages[this.chatMessages.length - 1].isTyping)) {
+                this.chatMessages.push({ role: "interviewee", content: "loading", isTyping: true });
             }
 
             // TODO: bug when reset
@@ -472,6 +490,8 @@ export default defineComponent({
         console.log("mounted")
         // Bind the event on component mount
         window.addEventListener('keydown', (event) => this.handleKeydown(event));
+
+        this.problemStatement  = this.problemList[0];
     },
     beforeUnmount() {
         // Unbind the event on component unmount
@@ -479,7 +499,10 @@ export default defineComponent({
     },
 
     watch: {
-
+        problemNumber(newProblemNumber) {
+            this.problemStatement = this.problemList[newProblemNumber];
+            console.log(`Problem number changed to ${newProblemNumber}, updating problem statement.`);
+        }
     },
 });
 </script>

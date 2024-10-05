@@ -44,9 +44,18 @@
 
         </div>
         <div class="col-6">
-            <div class="problemBox mt-3">
-                <div class="contact">
+            <div class="problemBox mt-3 container">
+                <div class="d-flex justify-content-between align-items-center mt-2">
                     <h6>Problem Description</h6>
+                    <div class="problem-select">
+                        <select class="form-select" style="min-width: 200px;" v-model="problemNumber">
+                            <!-- <option selected>Select Problem</option> -->
+                            <option value="0">Problem 1</option>
+                            <option value="1">Problem 2</option>
+                            <option value="2">Problem 3</option>
+                            <option value="3">Problem 4</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="problemStatement" ref="problemBox">
                     <div class="container mt-2">
@@ -70,7 +79,7 @@
 
 
 <script setup lang="ts">
-import { defineComponent, ref, nextTick, onMounted } from 'vue';
+import { defineComponent, ref, nextTick, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { Codemirror } from 'vue-codemirror'
 import { javascript } from '@codemirror/lang-javascript'
@@ -125,18 +134,28 @@ const isPaused = ref(false)
 
 let currentAudioSource: AudioBufferSourceNode;
 
+const problemNumber = ref(0);
+const problemList = ref([
+    `<b>Intersection of Two Arrays</b>
+        <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
+        <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
+        <b>Example 1:</b>
+        <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
+        <b>Example 2:</b>
+        <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>`,
+    'Problem 2: Description goes here.',
+    'Problem 3: Description goes here.',
+    'Problem 4: Description goes here.'
+]);
+
+const problemStatement = ref(problemList.value[0]);
 
 const backendURL = '/api';
-const problemStatement = `<b>Intersection of Two Arrays</b>
-                          <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
-                          <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
 
-                          <b>Example 1:</b>
-                          <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
-
-                          <b>Example 2:</b>
-                          <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>
-                          <p>Note: [9,4] is also accepted.</p>`;
+watch(problemNumber, (newProblemNumber) => {
+    problemStatement.value = problemList.value[newProblemNumber];
+    console.log(`Problem changed to ${newProblemNumber}:`, problemStatement.value);
+});
 
 const generateExample = async () => {
     const requestBody = {
