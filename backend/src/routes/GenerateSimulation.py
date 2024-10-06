@@ -10,7 +10,10 @@ generateSimulationBP = Blueprint('generateSimulationBP', __name__)
 
 @generateSimulationBP.route('/generateSimulation', methods=['POST'])
 def generate_static_simulation():
-    with open('routes/static/example_4_with_audio.json', 'r') as file:
+    data = request.json
+    problem_index = int(data['problem_index'])
+    print(problem_index)
+    with open(f'routes/static/problem_{problem_index}_with_audio.json', 'r') as file:
         data = json.load(file)
         # data = generate_tts_from_generated_simulation(data)
     return data
@@ -23,12 +26,12 @@ def generate_simulation():
     prompt = f"""
                 Simulate a realistic coding interview between an interviewer and an interviewee focused on solving the given Problem. 
                 The simulation should include explanations of best practices based on the example provided. When you write the code put it on "lines of code" and write and explain it step by step.
-                Do not use built-in library if possible
+                Do not use built-in library if possible.
 
                 Format your answer into a json format:
-                [{{"role(interviewer/ interviewee)": "", "content": "", "code (containing STEP BY STEP CODE that the interviewee write while think aloud)": "","explanation (when the role is interviewee, explain the importance or rationale of answering in a such way)": ""}}, ...]]
+                [{{"role(interviewer/ interviewee)": "", "content": "", "code (containing STEP BY STEP CODE that the interviewee write while think aloud, only when the role is interviewee)": "","explanation (when the role is interviewee, explain the importance or rationale of answering in a such way)": ""}}, ...]]
 
-                The interviewer should ask probing questions to understand the interviewee's thought process, while the interviewee should clearly explain their approach, consider edge cases, and write code to solve the problem.
+                The interviewer may implicitly ask probing questions to understand the interviewee's thought process, while the interviewee should clearly explain their approach, consider edge cases, and write code to solve the problem.
 
                 The interviewer may offer hints if the interviewee gets stuck and should evaluate the solution's correctness, efficiency, and clarity. The interviewee should think aloud, asking clarifying questions if needed and demonstrating their problem-solving skills.
                 
@@ -36,27 +39,32 @@ def generate_simulation():
 
                 Problem: {problem}
 
-                Interview Process (need to follow these all):
+                The interview should implicitly follow these six steps:
 
-                1. Introduction and Clarification:
-                - The interviewer introduces the problem and provides the examples.
-                - The interviewee need to ask for clarifications on the problem statement.
+                1. Understanding:
+                - The interviewer introduces the problem and provides examples.
+                - The interviewee may asks clarifying questions to ensure a full understanding of the problem.
+                - The interviewee may propose an initial test case to demonstrate their understanding of the requirements.
+
+                2. Initial Ideation:
+                - The interviewee brainstorms initial ideas on how to solve the problem.
                 
-                2. Initial Thoughts and Approach:
-                - The interviewee explains their initial thoughts and possible approaches to solve the problem.
-                - The interviewer may ask questions to explore the interviewee's understanding of time and space complexity.
-                
-                3. Coding:
+                3. Idea Justification:
+                - The interviewee justifies their chosen approach, explaining why it is suitable for the problem.
+
+                4. Implementation:
                 - The interviewee writes the code to solve the problem, explaining their logic as they go.
-                - The interviewer may ask the interviewee to consider different cases, such as empty arrays or arrays with no intersection.
-                
-                4. Testing and Optimization:
-                - The interviewee dry run their code by explaining the code with provided examples and considers additional test cases.
-                - The interviewer may ask about possible optimizations or alternative approaches.
-                
-                Wrap-Up:
+                - The interviewer may ask the interviewee to consider different cases, such as empty inputs or edge scenarios.
+
+                5. Review (Dry Run):
+                - After coding, the interviewee dry-runs their code with provided examples, walking through the logic step by step.
+                - The interviewee considers additional test cases to ensure robustness.
+
+                6. Evaluation:
+                - The interviewee evaluates their solution, discussing possible optimizations, edge cases, and any necessary improvements.
                 - The interviewer provides feedback on the solution, highlighting strengths and areas for improvement.
                 - The interviewee reflects on their performance and discusses what they could have done differently.
+
 
             """
 
@@ -71,7 +79,7 @@ def generate_simulation():
     response = openai.chat.completions.create(
         model=os.getenv('OPENAI_GPT_MODEL'),
         messages=messages,
-        temperature=0,
+        temperature=1,
     )
 
     response = response.choices[0].message.content

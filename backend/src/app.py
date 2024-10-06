@@ -48,18 +48,22 @@ def generate_tts(text):
     return tts_response.content
 
 
-def first_interaction():
-    problem = """
+def first_interaction(problem_index):
+    problems = ["""
     <b>Intersection of Two Arrays</b>
         <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
-        <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>"""
+        <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>""",
+    """<b>Two Sum</b>
+        <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return indices of the two numbers such that they add up to target.</p>
+        <p>You may assume that each input would have exactly one solution, and you may not use the same element twice.</p>"""
+        ]
     messages=[
             {"role": "system", 
              "content": f"""
                         You are a hiring manager conducting a coding interview. Your goal is to assess the candidate's problem-solving skills, coding ability, and communication. Begin by say hi and present the following coding problem:
 
                             Problem:
-                            ```{problem}```
+                            ```{problems[problem_index]}```
     
                         """},
         ]
@@ -128,8 +132,8 @@ def first_interaction():
 
 
 
-def call_open_api(input_data):
-    problem = """
+def call_open_api(input_data, problem_index):
+    problems = ["""
     `<b>Intersection of Two Arrays</b>
         <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
         <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
@@ -140,7 +144,14 @@ def call_open_api(input_data):
         <b>Example 2:</b>
         <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>
         <p>Note: [9,4] is also accepted.</p>`
-    """
+    """,
+    """<b>Two Sum</b>
+        <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return indices of the two numbers such that they add up to target.</p>
+        <p>You may assume that each input would have exactly one solution, and you may not use the same element twice.</p>
+        
+        <b>Example 1:</b>
+        <pre><code>Input: nums = [2,7,11,15], target = 9 \n Output: [0,1]<pre><code>
+        """]
 
     code = input_data['code']
 
@@ -153,7 +164,7 @@ def call_open_api(input_data):
                             The coding problem is the following:
 
                             Problem:
-                            ```{problem}```
+                            ```{problems[problem_index]}```
 
                             The candidate will implicitly follow these six steps:
                             1. Understanding: The candidate may ask clarifying questions to ensure they fully understand the problem and may propose an initial test case to demonstrate their understanding of the requirements.
@@ -198,10 +209,6 @@ def get_phase_interview(chat_messages):
             {chat_messages}
             \"\"\"
 
-
-            mathematica
-            Copy code
-            <Insert transcript here>
             The candidate implicitly follows these six steps in a coding interview:
 
             - Understanding: The candidate responds to clarifying questions or asks their own to confirm understanding of the problem. The interviewer might prompt them for clarification or deeper understanding.
@@ -256,17 +263,18 @@ def get_phase_interview(chat_messages):
 def handle_message():
     try:
         data = request.json
+        problem_index = int(data['problem_index'])
         # sid = request.remote_addr  # or use any session/user identification mechanism
         print(f"Received text: {data}")
 
         if data['is_first'] == True:
-            message = first_interaction()
+            message = first_interaction(problem_index)
             audio = generate_tts(message)
             audio_base64 = base64.b64encode(audio).decode('utf-8')
             response_data = {'audio_data': audio_base64, 'text_response': message, 'phase': 'Understanding'}
 
         else:
-            res, transcript = call_open_api(data)
+            res, transcript = call_open_api(data, problem_index)
             message = res.choices[0].message.content
             transcript.append({'content': message, "role": 'assistant'})
 

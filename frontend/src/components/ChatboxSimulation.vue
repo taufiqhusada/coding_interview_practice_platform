@@ -3,7 +3,7 @@
         <div class="d-flex justify-content-between align-items-center mt-2">
             <h6>Problem Description</h6>
             <div class="problem-select">
-                <select class="form-select" style="min-width: 200px;" v-model="problemNumber">
+                <select class="form-select" style="min-width: 200px;" v-model="problemNumber" :disabled="isRecording">
                     <!-- <option selected>Select Problem</option> -->
                     <option value="0">Problem 1</option>
                     <option value="1">Problem 2</option>
@@ -153,7 +153,9 @@ export default defineComponent({
 
                                 <b>Example 2:</b>
                                 <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>`,
-                'problem 2',
+                `<b>Two Sum</b>
+                                <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return indices of the two numbers such that they add up to target.</p>
+                                <p>You may assume that each input would have exactly one solution, and you may not use the same element twice.</p>`,
                 'problem 3',
                 'problem 4'
 
@@ -197,7 +199,8 @@ export default defineComponent({
             try {
                 // Make an API request for the first interaction using axios
                 const response = await axios.post('api/message', {
-                    is_first: true
+                    is_first: true,
+                    problem_index: this.problemNumber,
                 });
 
                 // Process the response if it's successful
@@ -322,7 +325,8 @@ export default defineComponent({
                                 const response = await axios.post('api/message', {
                                     messages: this.chatMessages,
                                     code: this.code,
-                                    is_first: false
+                                    is_first: false,
+                                    problem_index: this.problemNumber,
                                 });
 
                                 // Process the response from the server
@@ -445,7 +449,8 @@ export default defineComponent({
                 const response = await axios.post('api/message', {
                     messages: this.chatMessages,
                     code: this.code,
-                    is_first: false
+                    is_first: false,
+                    problem_index: this.problemNumber,
                 });
 
                 // Process the response from the server

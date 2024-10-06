@@ -48,7 +48,7 @@
                 <div class="d-flex justify-content-between align-items-center mt-2">
                     <h6>Problem Description</h6>
                     <div class="problem-select">
-                        <select class="form-select" style="min-width: 200px;" v-model="problemNumber">
+                        <select class="form-select" style="min-width: 200px;" v-model="problemNumber" :disabled="isExampleFetched">
                             <!-- <option selected>Select Problem</option> -->
                             <option value="0">Problem 1</option>
                             <option value="1">Problem 2</option>
@@ -134,6 +134,8 @@ const isPaused = ref(false)
 
 let currentAudioSource: AudioBufferSourceNode;
 
+const isExampleFetched = ref(false)
+
 const problemNumber = ref(0);
 const problemList = ref([
     `<b>Intersection of Two Arrays</b>
@@ -143,7 +145,9 @@ const problemList = ref([
         <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
         <b>Example 2:</b>
         <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>`,
-    'Problem 2: Description goes here.',
+    `<b>Two Sum</b>
+        <p>Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.</p>
+        <p>You may assume that each input would have exactly one solution, and you may not use the same element twice.</p>`,
     'Problem 3: Description goes here.',
     'Problem 4: Description goes here.'
 ]);
@@ -157,9 +161,10 @@ watch(problemNumber, (newProblemNumber) => {
     console.log(`Problem changed to ${newProblemNumber}:`, problemStatement.value);
 });
 
-const generateExample = async () => {
+const generateExample = async (problemNumber: number) => {
     const requestBody = {
         messages: '',
+        problem_index: problemNumber
     };
 
     try {
@@ -168,6 +173,7 @@ const generateExample = async () => {
         if (response.status === 200) {
             // Update the feedback field with the response from GPT-4
             allChatMessages.value = response.data;
+            isExampleFetched.value = true;
         } else {
             console.error('Failed to get chat from GPT:', response.status, response.data);
         }
@@ -177,10 +183,14 @@ const generateExample = async () => {
 };
 
 onMounted(async () => {
-    await generateExample(); // Wait for the example to be generated
+    // await generateExample(); // Wait for the example to be generated
 });
 
 const getNextInteraction = async () => {
+    if (!isExampleFetched.value){
+        await generateExample(problemNumber.value); 
+    }
+
     if (isPaused.value){
         return;
     }
@@ -195,7 +205,7 @@ const getNextInteraction = async () => {
             audio_base64: "",
         });
 
-        if (nextMessage.explanation == "" || nextMessage.role == 'interviewer'){
+        if (nextMessage.explanation==null || nextMessage.explanation == "" || nextMessage.role == 'interviewer'){
             showPopup.value = false;
         } else {
             showPopup.value = true;
@@ -265,7 +275,8 @@ const processAudio = async (res: any) => {
 
     // If there is code, simulate typing it
     let typeCodePromise: Promise<any> = Promise.resolve(); 
-    if (res.code !== "") {
+    if (res.code && res.code !== "") {
+        console.log("not empty code", res.code)
         typeCodePromise = typeCode(res.code);
     }
 
@@ -781,5 +792,13 @@ input::placeholder {
 
 .popup-message p {
     margin: 0;
+}
+
+.problemStatement {
+    display: flex;
+    flex-direction: column; /* Ensure elements are stacked vertically */
+    justify-content: flex-start; /* Align items to the top */
+    height: 45vh; /* Set a fixed height */
+    overflow: auto; /* Handle overflow if the content is too large */
 }
 </style>
