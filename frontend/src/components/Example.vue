@@ -3,11 +3,11 @@
         <div class="col-6">
             <div class="icon-container mt-3">
                 <!-- Floating Icon -->
+                <div v-if="showPopup" class="popup-message">
+                    <div v-html="popupMessage"></div>
+                </div>
                 <div class="floating-icon" @click="togglePopup">
                     <i class="fas fa-comments"></i>
-                </div>
-                <div v-if="showPopup" class="popup-message">
-                    <p>{{ popupMessage }}</p>
                 </div>
             </div>
             <div class="chat mt-3">
@@ -34,8 +34,8 @@
                     <button v-if="isPaused" @click="continueInteraction" class="btn btn-primary" style="">Continue</button>
                     <div v-else>
                          <!-- <button @click="generateExample" class="btn btn-primary">Generate Example</button> -->
-                        <button @click="pauseInteraction" class="btn btn-outline-primary" style="">Pause</button>
-                        <button @click="getNextInteraction" class="btn btn-primary" style="margin-left: 20px;">Next</button>
+                        <button  v-if="isStarted" @click="pauseInteraction" class="btn btn-outline-primary" style="">Pause</button>
+                        <button v-if="!isStarted" @click="getNextInteraction" class="btn btn-primary" style="margin-left: 20px;">Start</button>
                     </div>
                    
 
@@ -52,8 +52,8 @@
                             <!-- <option selected>Select Problem</option> -->
                             <option value="0">Problem 1</option>
                             <option value="1">Problem 2</option>
-                            <option value="2">Problem 3</option>
-                            <option value="3">Problem 4</option>
+                            <!-- <option value="2">Problem 3</option>
+                            <option value="3">Problem 4</option> -->
                         </select>
                     </div>
                 </div>
@@ -131,6 +131,7 @@ const showPopup = ref(true) // Control popup visibility
 const popupMessage = ref("Ready to learn? Click the start button to see the example think-aloud process")
 
 const isPaused = ref(false)
+const isStarted = ref(false)
 
 let currentAudioSource: AudioBufferSourceNode;
 
@@ -140,11 +141,7 @@ const problemNumber = ref(0);
 const problemList = ref([
     `<b>Intersection of Two Arrays</b>
         <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
-        <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
-        <b>Example 1:</b>
-        <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
-        <b>Example 2:</b>
-        <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>`,
+        <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>`,
     `<b>Two Sum</b>
         <p>Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.</p>
         <p>You may assume that each input would have exactly one solution, and you may not use the same element twice.</p>`,
@@ -187,6 +184,7 @@ onMounted(async () => {
 });
 
 const getNextInteraction = async () => {
+    isStarted.value = true
     if (!isExampleFetched.value){
         await generateExample(problemNumber.value); 
     }
@@ -209,7 +207,7 @@ const getNextInteraction = async () => {
             showPopup.value = false;
         } else {
             showPopup.value = true;
-            popupMessage.value = nextMessage.explanation;
+            popupMessage.value = '<b>Explanation: </b>' + nextMessage.explanation;
         }
 
         scrollToBottom();
@@ -307,7 +305,7 @@ const processAudio = async (res: any) => {
             // Set a 2-second delay before calling getNextInteraction
             setTimeout(() => {
                 getNextInteraction();
-            }, 2000);  // 2000 ms = 2 seconds
+            }, 1000);  // 2000 ms = 2 seconds
 
         };
 
@@ -618,7 +616,7 @@ input::placeholder {
     flex-direction: column;
     justify-content: space-between;
     max-width: 100%;
-    height: 45vh;
+    height: 25vh;
     z-index: 2;
     box-sizing: border-box;
     border-radius: 1rem;

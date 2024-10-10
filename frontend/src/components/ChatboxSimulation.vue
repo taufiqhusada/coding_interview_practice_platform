@@ -7,8 +7,8 @@
                     <!-- <option selected>Select Problem</option> -->
                     <option value="0">Problem 1</option>
                     <option value="1">Problem 2</option>
-                    <option value="2">Problem 3</option>
-                    <option value="3">Problem 4</option>
+                    <!-- <option value="2">Problem 3</option>
+                    <option value="3">Problem 4</option> -->
                 </select>
             </div>
         </div>
@@ -146,13 +146,7 @@ export default defineComponent({
             problemList: [
                 `<b>Intersection of Two Arrays</b>
                                 <p>Given two integer arrays <code>nums1</code> and <code>nums2</code>, return an array of their intersection.</p>
-                                <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>
-
-                                <b>Example 1:</b>
-                                <pre><code>Input: nums1 = [1,2,2,1], nums2 = [2,2]\nOutput: [2,2]</code></pre>
-
-                                <b>Example 2:</b>
-                                <pre><code>Input: nums1 = [4,9,5], nums2 = [9,4,9,8,4]\nOutput: [4,9]</code></pre>`,
+                                <p>Each element in the result must appear as many times as it shows in both arrays, and you may return the result in any order.</p>`,
                 `<b>Two Sum</b>
                                 <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return indices of the two numbers such that they add up to target.</p>
                                 <p>You may assume that each input would have exactly one solution, and you may not use the same element twice.</p>`,
@@ -350,6 +344,10 @@ export default defineComponent({
 
             this.recognition.onerror = (event) => {
                 console.log('Speech recognition error: ' + event.error);
+
+                setTimeout(async () => {
+                    this.recognition?.start();
+                }, 1000);
             };
 
             this.recognition.onspeechstart = (e) => {
@@ -533,7 +531,7 @@ export default defineComponent({
     flex-direction: column;
     justify-content: space-between;
     max-width: 100%;
-    height: 40vh;
+    height: 22vh;
     z-index: 2;
     box-sizing: border-box;
     border-radius: 1rem;

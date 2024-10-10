@@ -3,3 +3,4 @@ __pycache__/
 */__pycache__/
 .DS_store
 firebase_config.json
+src/routes/static/old

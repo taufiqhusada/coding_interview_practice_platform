@@ -7,9 +7,7 @@
         <!-- Floating Icon and Popup above the languageSelect -->
         <div class="icon-container mt-2">
           <!-- Floating Icon -->
-          <div class="floating-icon" @click="togglePopup">
-            <i class="fas fa-comments"></i>
-          </div>
+        
 
           <!-- Popup message (to the right of the icon) -->
           <div v-if="showPopup" class="popup-message">
@@ -20,7 +18,7 @@
                 <b>Step {{ currentStepIdx + 1 }} : {{ listStep[currentStepIdx] }}</b>
               </div>
 
-              <p>{{ popupMessage }}</p>
+              <div v-html="popupMessage"></div>
               <!-- <div v-show="currState == PracticeState.Practicing" class="mt-3">
                 <p>After practicing this step, click get feedback button to get immediate feedback</p>
                 <button class="btn btn-outline-primary mt-1" style="font-size: 90%;" @click="getFeedback">Get
@@ -34,7 +32,10 @@
               </div>
             </div>
           </div>
-
+          
+          <div class="floating-icon" @click="togglePopup">
+            <i class="fas fa-comments"></i>
+          </div>
 
         </div>
 
@@ -185,7 +186,7 @@ export default defineComponent({
             const feedback = response.data["feedback"]
 
             currState.value = PracticeState.FeedbackReceived;
-            popupMessage.value = feedback;
+            popupMessage.value = `<b>Feedback on this step: </b><p>` + feedback + '</p>';
 
           } else {
             // Handle API response error
@@ -262,11 +263,14 @@ export default defineComponent({
   max-width: 25%;
 }
 
-/* Container for the icon and popup message */
 .icon-container {
-  display: flex;
+  position: fixed; /* Use fixed positioning to anchor the icon in the viewport */
+  bottom: 50px; /* Position it at the bottom */
+  right: 40px; /* Position it at the right */
+  display: flex; /* Flexbox to align the popup and icon */
   align-items: center;
-  margin-bottom: 10px;
+  justify-content: flex-end;
+  z-index: 9999;
 }
 
 /* Floating Icon */
@@ -277,7 +281,6 @@ export default defineComponent({
   padding: 10px;
   cursor: pointer;
   box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
-  margin-right: 10px;
 }
 
 .floating-icon i {
@@ -288,7 +291,7 @@ export default defineComponent({
   background-color: #0056b3;
 }
 
-/* Popup message to the right of the icon */
+/* Popup message (adjust position to appear to the left of the icon) */
 .popup-message {
   background-color: #fff;
   border: 1px solid #ddd;
@@ -297,11 +300,9 @@ export default defineComponent({
   box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
   font-size: 14px;
   width: 400px;
-  transition: opacity 0.3s ease;
+  margin-right: 10px; /* Space between the icon and the popup */
   white-space: wrap;
 }
 
-.popup-message p {
-  margin: 0;
-}
+
 </style>

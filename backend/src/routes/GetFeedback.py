@@ -125,7 +125,7 @@ def get_specific_feedback():
     dict_phase = {
         "Understanding": "Understanding:  Evaluate whether they proposed a relevant test case to demonstrate their understanding of the problem or/and how effectively the interviewee asked clarifying questions. Did they fully grasp the requirements? Were there missed opportunities to seek more clarity?",
 
-        "Initial Ideation": "Initial Ideation: Assess how the interviewee brainstormed initial ideas and solutions. Did they consider multiple approaches or stick with a single idea? Did they clearly explain their thought process?",
+        "Initial Ideation": "Initial Ideation: Assess how the interviewee brainstormed initial ideas and solutions. Did they clearly explain their thought process?",
 
         "Idea Justification": "Idea Justification: Evaluate how well the interviewee justified their proposed solution. Did they explain why their approach was suitable or compare it to alternative solutions? Were they able to defend their choice of data structures, algorithms, or logic?",
 

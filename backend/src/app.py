@@ -60,7 +60,7 @@ def first_interaction(problem_index):
     messages=[
             {"role": "system", 
              "content": f"""
-                        You are a hiring manager conducting a coding interview. Your goal is to assess the candidate's problem-solving skills, coding ability, and communication. Begin by say hi and present the following coding problem:
+                        You are a hiring manager conducting a coding interview. Your goal is to assess the candidate's problem-solving skills, coding ability, and communication. Begin by say hi and present the following coding problem. After that ask them whether they understand the problem
 
                             Problem:
                             ```{problems[problem_index]}```
@@ -180,8 +180,9 @@ def call_open_api(input_data, problem_index):
                             - If the candidate struggles, offer hints or guidance after they’ve made a reasonable attempt.
                             - Observe the correctness, efficiency, and clarity of their code and communication.
                             - Ignore the typo or grammar error from candidate answer
+                            - Make sure your communication is short and concise.
                             
-                            At any point, you can refer to the candidate’s current code:
+                            At any point, you can refer to the candidate’s current code (Ignore the syntax error, just focus on the logic):
 
                             Candidate's Current Code:
                             ```{code}```
