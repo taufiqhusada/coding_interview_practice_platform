@@ -162,6 +162,7 @@ export default defineComponent({
             selectedInteractionMode: "manualReply",
             interimTranscript: '',
             currentTranscript: '',
+            isCodeUpdated: false,
         };
     },
 
@@ -449,7 +450,10 @@ export default defineComponent({
                     code: this.code,
                     is_first: false,
                     problem_index: this.problemNumber,
+                    isCodeUpdated: this.isCodeUpdated,
                 });
+
+                this.isCodeUpdated = false;
 
                 // Process the response from the server
                 if (response.status === 200) {
@@ -505,6 +509,11 @@ export default defineComponent({
         problemNumber(newProblemNumber) {
             this.problemStatement = this.problemList[newProblemNumber];
             console.log(`Problem number changed to ${newProblemNumber}, updating problem statement.`);
+        },
+        code(newCode){
+            if (newCode != ''){
+                this.isCodeUpdated = true;
+            }
         }
     },
 });

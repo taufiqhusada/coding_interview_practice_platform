@@ -195,12 +195,23 @@ def call_open_api(input_data, problem_index):
 
     chat_messages = [{'content': item['content'], "role": 'user' if item['role'] == 'interviewee' else 'assistant'} for item in input_data['messages']]
 
+    try:
+        isCodeUpdated = input_data['isCodeUpdated']
+        if (isCodeUpdated):
+            chat_messages[-1]['content'] +=  f"""\nCandidate's Current Writing in Code Editor:
+                                                ```{code}```"""
+    except:
+        pass
+        
+
     messages += chat_messages
 
     completion = client.chat.completions.create(
         model='gpt-4o-mini',
         messages=messages
     )
+
+    print(messages)
 
     return completion, chat_messages
 
