@@ -21,21 +21,21 @@
 
     <div class="d-flex align-items-center mt-3">
         <button v-if="!isRecording && !isSendingMessage" @click="startRecording" class="btn btn-primary"
-            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
+            style="margin-right: 20px; max-width: 9rem; min-width: 9rem; white-space: nowrap;">
             Start Session
         </button>
         <button v-if="isRecording" @click="stopRecording" class="btn btn-outline-danger"
-            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
+            style="margin-right: 20px; max-width: 9rem; min-width: 9rem; white-space: nowrap;">
             Stop Session
         </button>
 
         <button v-if="isRecording" @click="toggleTranscript" class="btn btn-outline-primary"
-            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
+            style="margin-right: 20px; max-width: 9rem;  min-width: 9rem; white-space: nowrap;">
             {{ isTranscriptVisible ? 'Hide Transcript' : 'Show Transcript' }}
         </button>
 
         <button v-if="isRecording && !isSendingMessage" @click="getResponseFromGPT" class="btn btn-outline-primary"
-            style="margin-right: 20px; width: auto; min-width: 150px; white-space: nowrap;">
+            style="margin-right: 20px; max-width: 9rem; min-width: 9rem; white-space: nowrap;">
             Get Response
         </button>
 
@@ -44,7 +44,7 @@
         </div>
 
         <div class="form-group mb-0" style="flex-grow: 1;"> <!-- Use flex-grow for better responsiveness -->
-            <select id="interactionMode" class="form-select" style="padding: 0.375rem 0.75rem; min-width: 150px;"
+            <select id="interactionMode" class="form-select" style="padding: 0.375rem 0.75rem; min-width: 9rem; max-width: 9rem;"
                 @change="changeInteractionMode" v-model="selectedInteractionMode">
                 <option value="manualReply">Manual Reply</option>
                 <option value="autoReplay">Auto Reply</option>

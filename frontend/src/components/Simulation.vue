@@ -12,7 +12,7 @@
             <!-- Add more languages as needed -->
           </select>
         </div>
-        <codemirror v-model="code" placeholder="" :style="{ height: '78vh' }" :autofocus="true" :indent-with-tab="true" style="max-width:38rem; font-size: smaller;"
+        <codemirror v-model="code" placeholder="" :style="{ height: '78vh' }" :autofocus="true" :indent-with-tab="true" style="max-width:36rem; font-size: smaller;"
           :tab-size="2" :extensions="extensions" @ready="handleReady" @change="log('change', $event)"
           @focus="log('focus', $event)" @blur="log('blur', $event)" />
       </div>
