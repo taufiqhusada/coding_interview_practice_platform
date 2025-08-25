@@ -1,27 +1,27 @@
 <template>
-  <nav class="navbar navbar-light bg-light shadow">
-    <div class="container d-flex justify-content-between">
+  <nav class="navbar navbar-light bg-light">
+    <div class="container d-flex justify-content-between" style="height: 40px;">
       <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="/images/minimalist_interview_logo.png" width="33" height="33"
-          class="d-inline-block align-top rounded-circle" alt="">
-        <b class="site-title">Coding Interview Practice</b>
+        <!-- <img src="/images/minimalist_interview_logo.png" width="33" height="33"
+          class="d-inline-block align-top rounded-circle" alt=""> -->
+        <b class="site-title">Think-Aloud Practice in Technical Interview</b>
       </a>
-      <div class="navbar-items d-flex">
+      <div class="navbar-items d-flex" style="margin-right: 80px;">
         <a class="nav-link" :class="{ 'current-link': currentPage === 'simulation' }" href="/">
           Simulation
         </a>
-        <a class="nav-link" :class="{ 'current-link': currentPage === 'guidedPractice' }" href="/guidedSimulation">
+        <!-- <a class="nav-link" :class="{ 'current-link': currentPage === 'guidedPractice' }" href="/guidedSimulation">
           Guided Practice
-        </a>
+        </a> -->
         <a class="nav-link" :class="{ 'current-link': currentPage === 'feedback' }" href="/feedback">
-          Assessment
+          Feedback
         </a>
         <a class="nav-link" :class="{ 'current-link': currentPage === 'example' }" href="/example">
           Example
         </a>
-        <!-- <a class="nav-link" :class="{ 'current-link': currentPage === 'comparison' }" href="/comparison">
+        <a v-show="false" class="nav-link" :class="{ 'current-link': currentPage === 'comparison' }" href="/comparison">
           4. Comparison
-        </a> -->
+        </a>
       </div>
     </div>
   </nav>
@@ -69,6 +69,7 @@ export default {
 /* Current link styling */
 .current-link {
   color: #007bff;
-  border-bottom: 2px solid #007bff;
+  /* border-bottom: 2px solid #007bff; */
+  border-bottom: 2px solid rgb(86, 180, 233);
 }
 </style>

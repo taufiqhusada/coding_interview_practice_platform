@@ -49,7 +49,7 @@
           </select>
         </div>
 
-        <codemirror v-model="code" placeholder="" :style="{ height: '60vh' }" :autofocus="true" :indent-with-tab="true"
+        <codemirror v-model="code" placeholder="" :style="{ height: '70vh' }" :autofocus="true" :indent-with-tab="true"
           style="max-width:38rem; font-size: smaller;" :tab-size="2" :extensions="extensions" @ready="handleReady"
           @change="log('change', $event)" @focus="log('focus', $event)" @blur="log('blur', $event)" />
       </div>

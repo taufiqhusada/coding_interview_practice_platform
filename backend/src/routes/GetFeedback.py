@@ -49,7 +49,7 @@ def get_general_feedback():
                 "evaluation": "Feedback on how the interviewee evaluated their solution, including discussions of potential optimizations, edge cases, or improvements."
             }}
 
-            make sure you assess it objectively.
+            make sure your feedback is constructive. Also please ignore some typo or transcription error
 
             Here are the specific phases to assess:
 
@@ -65,7 +65,7 @@ def get_general_feedback():
 
             6. Evaluation: Provide feedback on how the interviewee evaluated their solution after coding. Did they discuss possible optimizations, improvements, or additional test cases to check for edge cases?
 
-            If the interviewee did not perform a phase, note that it was not done.
+            If the interviewee did not perform a phase, note that it was not done.  make sure your feedback is constructive. Also please ignore some typo or transcription error
             
             Transcript:  {str(transcript)}
 
@@ -97,7 +97,7 @@ def get_general_feedback():
 def retrieve_general_feedback():
     try:
         data = request.json
-        sessionID = data['sessionID']
+        sessionID = "88978068-0e5d-4b2e-9567-27c235084bf5" #data['sessionID']
         # Query the InterviewTranscript object based on sessionID
         interview = InterviewTranscript.objects.get(sessionID=sessionID)
         
@@ -140,7 +140,7 @@ def get_specific_feedback():
     prompt = f"""
         "I have a transcript of a coding interview where the interviewee is required to think aloud while solving a problem. Based on the transcript provided below, please give detailed feedback on specific phase {phase} 
 
-            make sure you assess it objectively. 
+            make sure your feedback is constructive. Also please ignore some typo or transcription error
 
             Here the guideline specific phases to assess:
 

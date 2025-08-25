@@ -31,7 +31,7 @@
                     </div>
                 </div>
                 <div class="input">
-                    <button v-if="isPaused" @click="continueInteraction" class="btn btn-primary" style="">Continue</button>
+                    <button v-if="isPaused" @click="continueInteraction" class="btn btn-outline-primary" style="">Pause</button>
                     <div v-else>
                          <!-- <button @click="generateExample" class="btn btn-primary">Generate Example</button> -->
                         <button  v-if="isStarted" @click="pauseInteraction" class="btn btn-outline-primary" style="">Pause</button>
@@ -348,7 +348,7 @@ const togglePopup = () => {
     flex-direction: column;
     justify-content: space-between;
     max-width: 100%;
-    height: 75vh;
+    height: 80vh;
     z-index: 2;
     box-sizing: border-box;
     border-radius: 1rem;

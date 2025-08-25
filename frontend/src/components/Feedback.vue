@@ -1,10 +1,13 @@
 <template>
-  <div v-if="transcript.length !== 0">
+  <div class="mt-3" v-if="transcript.length !== 0">
     <div class="row">
       <div class="col-sm-4">
 
         <section ref="chatArea" class="transcript">
-          <h4 class="headline">Transcript</h4>
+          <h5 class="headline">Transcript</h5>
+          <div class="mt-2">
+
+          </div>
           <div v-for="(message, index) in transcript" :key="index"
             :class="[{ 'margin-right': message.role === 'interviewer', 'margin-left': message.role === 'interviewee' }]">
             <div class="message-container">
@@ -22,9 +25,9 @@
 
       <div class="col-sm-8">
         <section ref="chatArea" class="transcript">
-          <h4 class="headline">Assessment of the Think-Aloud Process</h4>
+          <h5 class="headline">Assessment of the Think-Aloud Process</h5>
 
-          <div class="message-container">
+          <div class="message-container mt-2">
             <div class="content">
               <b>Feedback on Understanding</b>: {{ feedbackContent?.understanding }}
             </div>
@@ -142,10 +145,10 @@ export default defineComponent({
 .transcript {
   border: 1px solid #ccc;
   background: white;
-  max-height: 77vh;
+  max-height: 82vh;
   padding: 1em;
   overflow: auto;
-  max-width: 40rem;
+  max-width: 50rem;
   margin: 0 auto 2em auto;
   box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);
   display: flex;
@@ -158,7 +161,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  max-width: 40rem;
+  max-width: 45rem;
   z-index: 2;
   box-sizing: border-box;
   border-radius: 1rem;
