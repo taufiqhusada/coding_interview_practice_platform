@@ -172,7 +172,7 @@ For questions about this research or the platform, please contact:
 ## 🔗 Links
 
 - **Paper**: [arXiv:2507.14418](https://arxiv.org/abs/2507.14418)
-- **Conference**: [IEEE VL/HCC 2025](https://vlhcc2025.github.io/)
+- **Conference**: [IEEE VL/HCC 2025](https://conf.researchr.org/home/vlhcc-2025)
 
 ---
 
