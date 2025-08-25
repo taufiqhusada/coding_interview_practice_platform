@@ -1,7 +1,8 @@
 # Conversational AI for Technical Interview Practice
 
-A web-based platform that uses conversational AI to help Computer Science students practice the think-aloud process during technical interviews. This system was developed as part of the research presented in the paper "Designing Conversational AI to Support Think-Aloud Practice in Technical Interview Preparation for CS Students" (arXiv:2507.14418).
+A web-based platform that uses conversational AI to help Computer Science students practice the think-aloud process during technical interviews. This system was developed as part of the research presented in the paper "Designing Conversational AI to Support Think-Aloud Practice in Technical Interview Preparation for CS Students" published at **IEEE VL/HCC 2025**.
 - **Paper**: [arXiv:2507.14418](https://arxiv.org/abs/2507.14418)
+- **Conference**: IEEE Symposium on Visual Languages and Human-Centric Computing (VL/HCC) 2025
 
 ## 🎯 Overview
 
@@ -152,11 +153,12 @@ coding_interview_practice_platform/
 If you use this platform in your research or find it helpful, please cite our paper:
 
 ```bibtex
-@article{daryanto2025designing,
+@inproceedings{daryanto2025designing,
   title={Designing Conversational AI to Support Think-Aloud Practice in Technical Interview Preparation for CS Students},
-  author={Daryanto, Taufiq and Stil, Sophia and Ding, Xiaohan and Manesh, Daniel and Lee, Sang Won and Lee, Tim and Lunn, Stephanie and Rodriguez, Sarah and Brown, Chris},
-  journal={arXiv preprint arXiv:2507.14418},
-  year={2025}
+  author={Daryanto, Taufiq and Stil, Sophia and Ding, Xiaohan and Manesh, Daniel and Lee, Sang Won and Lee, Tim and Lunn, Stephanie and Rodriguez, Sarah and Brown, Chris and Rho, Eugenia},
+  booktitle={2025 IEEE Symposium on Visual Languages and Human-Centric Computing (VL/HCC)},
+  year={2025},
+  organization={IEEE}
 }
 ```
 
@@ -170,6 +172,7 @@ For questions about this research or the platform, please contact:
 ## 🔗 Links
 
 - **Paper**: [arXiv:2507.14418](https://arxiv.org/abs/2507.14418)
+- **Conference**: [IEEE VL/HCC 2025](https://vlhcc2025.github.io/)
 
 ---
 
