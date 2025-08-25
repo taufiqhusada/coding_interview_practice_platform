@@ -13,13 +13,13 @@ Technical interviews are crucial for CS students, but the think-aloud process—
 - **AI-Generated Think-Aloud Example Dialogue**: Providing (A) AI-generated dialogues that model thinking aloud during a technical interview for each coding problem. The goal is to help users learn from examples relevant to their current task and better articulate their thought processes
 
 ![Interview Simulation](public/1_interview%20simulation.png)
-*Technical Interview Simulation*
+
 
 ![Feedback System](public/2_feedback.png)
-*AI Feedback on Think-Aloud Practice*
+
 
 ![Learning Examples](public/3_example.png)
-*AI-Generated Think-Aloud Example Dialogue*
+
 
 
 
