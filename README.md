@@ -1,6 +1,7 @@
 # Conversational AI for Technical Interview Practice
 
 A web-based platform that uses conversational AI to help Computer Science students practice the think-aloud process during technical interviews. This system was developed as part of the research presented in the paper "Designing Conversational AI to Support Think-Aloud Practice in Technical Interview Preparation for CS Students" (arXiv:2507.14418).
+- **Paper**: [arXiv:2507.14418](https://arxiv.org/abs/2507.14418)
 
 ## 🎯 Overview
 
