@@ -29,7 +29,6 @@ Technical interviews are crucial for CS students, but the think-aloud process—
 - **Python Flask** - Web framework with async support
 - **OpenAI API** - Large Language Model integration
 - **MongoDB** - Database for storing sessions and user data
-- **Socket.IO** - Real-time communication
 
 
 ### Frontend
@@ -37,7 +36,6 @@ Technical interviews are crucial for CS students, but the think-aloud process—
 - **TypeScript** - Type-safe JavaScript development
 - **CodeMirror 6** - Advanced code editor with syntax highlighting
 - **Bootstrap 5** - Responsive UI framework
-- **Socket.IO Client** - Real-time frontend communication
 - **Axios** - HTTP client for API requests
 
 ## 📋 Prerequisites
