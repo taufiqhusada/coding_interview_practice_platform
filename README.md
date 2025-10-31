@@ -46,8 +46,6 @@ Technical interviews are crucial for CS students, but the think-aloud process—
 - **OpenAI API Key** (Required)
 - **MongoDB** (Optional - for persistent storage. Without it, data is stored in-memory and lost on restart)
 
-> 💡 **New Feature**: The platform now supports running without MongoDB! See [MONGODB_OPTIONAL.md](MONGODB_OPTIONAL.md) for more details.
-
 
 ## 🔧 Installation & Setup
 
