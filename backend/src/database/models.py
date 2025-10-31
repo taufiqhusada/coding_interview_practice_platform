@@ -1,3 +1,8 @@
+"""
+MongoDB Models - Only used when MongoDB is configured.
+When MongoDB is not available, the StorageAdapter uses in-memory storage instead.
+"""
+
 from .db import db
 import datetime
 

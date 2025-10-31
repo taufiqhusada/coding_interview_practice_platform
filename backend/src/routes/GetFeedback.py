@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify
 from util.response import  convert_to_json_resp
 from config.openai_connector import init_openai_config
-from database.models import InterviewTranscript
+from database.storage import StorageAdapter
 import os
 import uuid
 import datetime
@@ -12,20 +12,9 @@ getFeedbackBP = Blueprint('getFeedback', __name__)
 def save_transcript_and_feedback(transcript, feedback):
     # Generate a random sessionID using uuid
     session_id = str(uuid.uuid4())  
-    # Capture the current datetime
-    current_datetime = datetime.datetime.now()
     
-    # Create the data object
-    data = {
-        'sessionID': session_id,
-        'datetime': current_datetime,
-        'transcript': transcript,
-        'feedback': feedback,
-    }
-    
-    # Create an InterviewTranscript object and save it
-    interview = InterviewTranscript(**data)
-    interview.save()
+    # Save using storage adapter (works with or without MongoDB)
+    StorageAdapter.save_interview_transcript(session_id, transcript, feedback)
 
     return session_id
 
@@ -98,19 +87,22 @@ def retrieve_general_feedback():
     try:
         data = request.json
         sessionID = data['sessionID']
-        # Query the InterviewTranscript object based on sessionID
-        interview = InterviewTranscript.objects.get(sessionID=sessionID)
         
-        # Return the transcript and feedback
-        return {
-            'sessionID': interview.sessionID,
-            'datetime': interview.datetime,
-            'transcript': interview.transcript,
-            'feedback': interview.feedback,
-        }
-    except InterviewTranscript.DoesNotExist:
-        # Handle case where no transcript is found for the given sessionID
-        return {'error': 'No transcript found for the given sessionID'}
+        # Retrieve using storage adapter (works with or without MongoDB)
+        interview = StorageAdapter.get_interview_transcript(sessionID)
+        
+        if interview:
+            return {
+                'sessionID': interview['sessionID'],
+                'datetime': interview['datetime'],
+                'transcript': interview['transcript'],
+                'feedback': interview['feedback'],
+            }
+        else:
+            # Handle case where no transcript is found for the given sessionID
+            return {'error': 'No transcript found for the given sessionID'}
+    except Exception as e:
+        return {'error': str(e)}
 
 
 @getFeedbackBP.route('/getFeedback/specific', methods=['POST'])

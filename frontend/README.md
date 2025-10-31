@@ -8,6 +8,19 @@
 npm install
 ```
 
+### Environment Configuration
+
+Configure environment variables:
+```sh
+cp .env.example .env
+# Edit .env file with your backend URL
+```
+
+Create a `.env` file in the `frontend/` directory with:
+```env
+VITE_BACKEND_URL=http://127.0.0.1:5000
+```
+
 ### Compile and Hot-Reload for Development
 
 ```sh

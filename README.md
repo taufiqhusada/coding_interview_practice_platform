@@ -28,7 +28,8 @@ Technical interviews are crucial for CS students, but the think-aloud process—
 ### Backend
 - **Python Flask** - Web framework with async support
 - **OpenAI API** - Large Language Model integration
-- **MongoDB** - Database for storing sessions and user data
+- **MongoDB** (Optional) - Database for storing sessions and user data
+  - Can run without MongoDB using in-memory storage for development/testing
 
 
 ### Frontend
@@ -42,8 +43,10 @@ Technical interviews are crucial for CS students, but the think-aloud process—
 
 - **Python 3.8+**
 - **Node.js 18+**
-- **MongoDB** (local or cloud instance)
-- **OpenAI API Key**
+- **OpenAI API Key** (Required)
+- **MongoDB** (Optional - for persistent storage. Without it, data is stored in-memory and lost on restart)
+
+> 💡 **New Feature**: The platform now supports running without MongoDB! See [MONGODB_OPTIONAL.md](MONGODB_OPTIONAL.md) for more details.
 
 
 ## 🔧 Installation & Setup
@@ -62,9 +65,32 @@ cd backend
 pip install -r requirements.txt
 
 # Set up environment variables
+cd src
 cp .env.example .env
 # Edit .env file with your API keys and database URLs
+cd ..
 ```
+
+**Configure the backend `.env` file** (`backend/src/.env`):
+
+**Option 1: With MongoDB (Recommended for Production)**
+```env
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/database_name
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_GPT_MODEL=gpt-4o-mini
+JWT_SECRET_KEY=your_jwt_secret_key_here
+```
+
+**Option 2: Without MongoDB (Development/Testing)**
+```env
+# Leave MONGO_URI empty or comment it out to use in-memory storage
+MONGO_URI=
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_GPT_MODEL=gpt-4o-mini
+JWT_SECRET_KEY=your_jwt_secret_key_here
+```
+
+> **Note:** When running without MongoDB, interview transcripts and feedback are stored in memory and will be lost when the server restarts. This mode is suitable for development and testing only.
 
 ### 3. Frontend Setup
 ```bash
@@ -78,15 +104,9 @@ cp .env.example .env
 # Edit .env file with your backend API URL
 ```
 
-### 4. Environment Configuration
-
-Create a `.env` file in the backend directory:
+**Configure the frontend `.env` file** (`frontend/.env`):
 ```env
-OPENAI_API_KEY=your_openai_api_key
-MONGODB_URI=your_mongodb_connection_string
-FIREBASE_CREDENTIALS_PATH=path_to_firebase_credentials.json
-JWT_SECRET_KEY=your_jwt_secret_key
-FLASK_ENV=development
+VITE_BACKEND_URL=http://127.0.0.1:5000
 ```
 
 ## 🚀 Running the Application
