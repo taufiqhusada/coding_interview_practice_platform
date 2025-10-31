@@ -81,6 +81,8 @@ OPENAI_GPT_MODEL=gpt-4o-mini
 JWT_SECRET_KEY=your_jwt_secret_key_here
 ```
 
+> 📚 **Need help setting up MongoDB?** Check out the [MongoDB Atlas Tutorial](https://www.mongodb.com/resources/products/platform/mongodb-atlas-tutorial) for easy cloud database setup (free tier available).
+
 **Option 2: Without MongoDB (Development/Testing)**
 ```env
 # Leave MONGO_URI empty or comment it out to use in-memory storage
