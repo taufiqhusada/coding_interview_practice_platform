@@ -16,10 +16,11 @@ Create a `.env` file in the `backend/src/` directory with the following variable
 MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/database_name
 OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_GPT_MODEL=gpt-4o-mini
-JWT_SECRET_KEY=your_jwt_secret_key_here
+JWT_SECRET_KEY=your_jwt_secret_key_here (can be any random string - just type random words!)
 ```
 
 > 📚 **New to MongoDB?** Follow this [MongoDB Atlas Tutorial](https://www.mongodb.com/resources/products/platform/mongodb-atlas-tutorial) for easy setup. Atlas offers a free tier perfect for getting started!
+
 
 **Option 2: Without MongoDB (Development/Testing)**
 ```env
@@ -27,7 +28,7 @@ JWT_SECRET_KEY=your_jwt_secret_key_here
 MONGO_URI=
 OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_GPT_MODEL=gpt-4o-mini
-JWT_SECRET_KEY=your_jwt_secret_key_here
+JWT_SECRET_KEY=your_jwt_secret_key_here (can be any random string - just type random words!)
 ```
 
 > **Note:** When `MONGO_URI` is empty or not set, the application uses in-memory storage. Interview data will be lost when the server restarts.
